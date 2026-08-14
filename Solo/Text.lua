@@ -1,0 +1,207 @@
+local _, addon = ...
+
+local Solo = addon.Solo
+local Defaults = addon.Defaults
+local SharedMedia = LibStub and LibStub("LibSharedMedia-3.0", true)
+local Utilities = addon.SoloUtilities
+local GetEntryAppearance = Utilities.GetEntryAppearance
+local GetBarDimensions = Utilities.GetBarDimensions
+local GetSoloBaseDimensions = Utilities.GetSoloBaseDimensions
+local GetTextColor = Utilities.GetTextColor
+
+local function GetDefaultTextPosition(display, key)
+    local width, height = display:GetWidth(), display:GetHeight()
+    local iconWidth = display.isBar and height or width
+    local iconCenterX = display.isBar and ((-width + iconWidth) / 2) or 0
+    if key == "soloStackPosition" then
+        return iconCenterX + (iconWidth / 2) - 7, (-height / 2) + 7
+    elseif key == "soloHotkeyPosition" then
+        return iconCenterX + (iconWidth / 2) - 10, (height / 2) - 7
+    end
+    return iconCenterX, 0
+end
+
+function Solo:ApplyTextMoverPosition(display, mover)
+    local settings = GetEntryAppearance(display.entry)
+    local position = settings[mover.positionKey]
+    local x, y
+    if type(position) == "table" then
+        x, y = tonumber(position.x), tonumber(position.y)
+    end
+    if display.isBar then
+        local iconWidth, iconHeight = display.Icon:GetWidth(), display.Icon:GetHeight()
+        if not x or not y then
+            if mover.positionKey == "soloStackPosition" then
+                x, y = (iconWidth / 2) - 7, (-iconHeight / 2) + 7
+            elseif mover.positionKey == "soloHotkeyPosition" then
+                x, y = (iconWidth / 2) - 10, (iconHeight / 2) - 7
+            else
+                x, y = 0, 0
+            end
+        end
+        mover:ClearAllPoints()
+        mover:SetPoint("CENTER", display.Icon, "CENTER", x, y)
+        return
+    end
+    if not x or not y then x, y = GetDefaultTextPosition(display, mover.positionKey) end
+    mover:ClearAllPoints()
+    mover:SetPoint("CENTER", display, "CENTER", x, y)
+end
+
+function Solo:CreateTextMover(display, positionKey, placeholderText)
+    local mover = CreateFrame("Frame", nil, display)
+    mover:SetSize(48, 22)
+    mover:SetFrameLevel(display:GetFrameLevel() + 10)
+    mover.positionKey = positionKey
+    self:ApplyTextMoverPosition(display, mover)
+    return mover
+end
+
+function Solo:GetTextPosition(entry, positionKey)
+    local settings = GetEntryAppearance(entry)
+    local position = settings[positionKey]
+    if type(position) == "table" and tonumber(position.x) and tonumber(position.y) then
+        return tonumber(position.x), tonumber(position.y)
+    end
+    local display = entry and self.displays[entry.cooldownID]
+    if display then
+        if display.isBar then
+            local iconWidth, iconHeight = display.Icon:GetWidth(), display.Icon:GetHeight()
+            if positionKey == "soloStackPosition" then
+                return (iconWidth / 2) - 7, (-iconHeight / 2) + 7
+            elseif positionKey == "soloHotkeyPosition" then
+                return (iconWidth / 2) - 10, (iconHeight / 2) - 7
+            end
+            return 0, 0
+        end
+        return GetDefaultTextPosition(display, positionKey)
+    end
+    local item = entry and addon.Runtime and addon.Runtime:GetLiveItem(entry.cooldownID)
+    local isBar = item and self:IsTrackedBarItem(item) or false
+    local width, height = GetSoloBaseDimensions(entry, item, isBar)
+    local dimensions = {
+        isBar = isBar,
+        GetWidth = function() return width end,
+        GetHeight = function() return height end,
+    }
+    if isBar then
+        local iconSize = GetBarDimensions(entry, item)
+        if positionKey == "soloStackPosition" then
+            return (iconSize / 2) - 7, (-iconSize / 2) + 7
+        elseif positionKey == "soloHotkeyPosition" then
+            return (iconSize / 2) - 10, (iconSize / 2) - 7
+        end
+        return 0, 0
+    end
+    return GetDefaultTextPosition(dimensions, positionKey)
+end
+
+function Solo:SetTextPosition(entry, positionKey, x, y)
+    local settings = addon:GetEntrySettings(entry.cooldownID, true)
+    settings[positionKey] = {
+        x = Clamp(math.floor((tonumber(x) or 0) + 0.5), -500, 500),
+        y = Clamp(math.floor((tonumber(y) or 0) + 0.5), -500, 500),
+    }
+    local display = self.displays[entry.cooldownID]
+    if display then self:ApplyTextLayout(display) end
+end
+
+local function FindCooldownText(frame, depth)
+    if not frame or (depth or 0) > 3 then return nil end
+    local ok, regions = pcall(function() return { frame:GetRegions() } end)
+    if ok then
+        for _, region in ipairs(regions) do
+            if region.IsObjectType and region:IsObjectType("FontString") then return region end
+        end
+    end
+    local childrenOK, children = pcall(function() return { frame:GetChildren() } end)
+    if childrenOK then
+        for _, child in ipairs(children) do
+            local text = FindCooldownText(child, (depth or 0) + 1)
+            if text then return text end
+        end
+    end
+    return nil
+end
+
+function Solo:ApplyCooldownTextLayout(display, size, x, y)
+    local cooldown = display.LiveCooldown or display.Cooldown
+    if not cooldown then return end
+    local settings = GetEntryAppearance(display.entry)
+    local fontNameSetting = settings.soloFont or Defaults.soloAppearance.font
+    local fontPath = SharedMedia and SharedMedia:Fetch("font", fontNameSetting) or STANDARD_TEXT_FONT
+    local mediaKey = tostring(fontNameSetting or "Default"):gsub("[^%w]", "")
+    local fontName = "BabyAurasCooldownFont"
+        .. tostring(display.entry.cooldownID):gsub("[^%w]", "") .. mediaKey .. tostring(size)
+    local font = _G[fontName] or CreateFont(fontName)
+    pcall(font.SetFont, font, fontPath or STANDARD_TEXT_FONT, size, "OUTLINE")
+    if type(cooldown.SetCountdownFont) == "function" then
+        local state = self.liveCooldownStates[cooldown]
+        if state and state.countdownFont == nil and type(cooldown.GetCountdownFont) == "function" then
+            local ok, original = pcall(cooldown.GetCountdownFont, cooldown)
+            if ok then state.countdownFont = original or false end
+        end
+        pcall(cooldown.SetCountdownFont, cooldown, fontName)
+    end
+    local text
+    if type(cooldown.GetCountdownFontString) == "function" then
+        local ok, countdownString = pcall(cooldown.GetCountdownFontString, cooldown)
+        if ok then text = countdownString end
+    end
+    text = text or FindCooldownText(cooldown)
+    if not text then return end
+    local state = self.liveCooldownStates[cooldown]
+    if state and not state.countdownText then
+        state.countdownText = {
+            region = text,
+            points = {},
+            font = { text:GetFont() },
+            color = { text:GetTextColor() },
+        }
+        local fontObject = text.GetFontObject and text:GetFontObject()
+        state.countdownText.fontName = fontObject and fontObject:GetName() or nil
+        pcall(function()
+            for index = 1, text:GetNumPoints() do
+                state.countdownText.points[index] = { text:GetPoint(index) }
+            end
+        end)
+    end
+    pcall(function()
+        local r, g, b, a = GetTextColor(settings, "soloCooldownColor", "cooldownColor")
+        text:SetFont(fontPath or STANDARD_TEXT_FONT, size, "OUTLINE")
+        text:SetTextColor(r, g, b, a)
+        text:ClearAllPoints()
+        text:SetPoint("CENTER", display.isBar and display.Icon or display, "CENTER", x, y)
+    end)
+end
+
+function Solo:ApplyTextLayout(display)
+    if not display or not display.StackMover then return end
+    local settings = GetEntryAppearance(display.entry)
+    for _, mover in ipairs(display.TextMovers) do self:ApplyTextMoverPosition(display, mover) end
+    local stackSize = Clamp(math.floor(tonumber(settings.soloStackFontSize) or Defaults.soloAppearance.stackFontSize), 8, 32)
+    local cooldownSize = Clamp(math.floor(tonumber(settings.soloCooldownFontSize) or Defaults.soloAppearance.cooldownFontSize), 8, 32)
+    local hotkeySize = Clamp(math.floor(tonumber(settings.soloHotkeyFontSize) or Defaults.soloAppearance.hotkeyFontSize), 8, 32)
+    local fontNameSetting = settings.soloFont or Defaults.soloAppearance.font
+    local fontPath = SharedMedia and SharedMedia:Fetch("font", fontNameSetting) or STANDARD_TEXT_FONT
+    fontPath = fontPath or STANDARD_TEXT_FONT
+    local stackR, stackG, stackB, stackA = GetTextColor(settings, "soloStackColor", "stackColor")
+    local cooldownR, cooldownG, cooldownB, cooldownA = GetTextColor(settings, "soloCooldownColor", "cooldownColor")
+    local hotkeyR, hotkeyG, hotkeyB, hotkeyA = GetTextColor(settings, "soloHotkeyColor", "hotkeyColor")
+    display.Count:SetFont(fontPath, stackSize, "OUTLINE")
+    display.StackPreview:SetFont(fontPath, stackSize, "OUTLINE")
+    display.CooldownPreview:SetFont(fontPath, cooldownSize, "OUTLINE")
+    display.Hotkey:SetFont(fontPath, hotkeySize, "OUTLINE")
+    display.Count:SetTextColor(stackR, stackG, stackB, stackA)
+    display.StackPreview:SetTextColor(stackR, stackG, stackB, stackA)
+    display.CooldownPreview:SetTextColor(cooldownR, cooldownG, cooldownB, cooldownA)
+    display.Hotkey:SetTextColor(hotkeyR, hotkeyG, hotkeyB, hotkeyA)
+    display.Hotkey:SetText(settings.soloHotkey or Defaults.soloAppearance.hotkey)
+    local x, y = GetDefaultTextPosition(display, "soloCooldownPosition")
+    local saved = settings.soloCooldownPosition
+    if type(saved) == "table" then
+        x = tonumber(saved.x) or x
+        y = tonumber(saved.y) or y
+    end
+    self:ApplyCooldownTextLayout(display, cooldownSize, x, y)
+end

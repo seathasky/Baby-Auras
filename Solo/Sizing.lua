@@ -1,0 +1,50 @@
+local _, addon = ...
+
+local Solo = addon.Solo
+local Defaults = addon.Defaults
+local GetBarDimensions = addon.SoloUtilities.GetBarDimensions
+
+function Solo:GetScale(entry)
+    local settings = entry and addon:GetEntrySettings(entry.cooldownID, false)
+    return Clamp(tonumber(settings and settings.soloScale) or Defaults.soloScale, 50, 200) / 100
+end
+
+function Solo:ApplyDisplayScale(display)
+    display:SetScale(self:GetScale(display.entry))
+end
+
+function Solo:SetScale(entry, percent)
+    local settings = addon:GetEntrySettings(entry.cooldownID, true)
+    settings.soloScale = Clamp(math.floor((tonumber(percent) or Defaults.soloScale) + 0.5), 50, 200)
+    local display = self.displays[entry.cooldownID]
+    if display then self:ApplyDisplayScale(display) end
+end
+
+function Solo:SetBarDimension(entry, settingKey, value)
+    local limits = {
+        soloBarIconSize = { 16, 96 },
+        soloBarWidth = { 80, 400 },
+        soloBarHeight = { 4, 80 },
+        soloBarTextSize = { 8, 32 },
+    }
+    local range = limits[settingKey]
+    if not entry or not range then return end
+    local settings = addon:GetEntrySettings(entry.cooldownID, true)
+    settings[settingKey] = Clamp(math.floor((tonumber(value) or range[1]) + 0.5), range[1], range[2])
+    local display = self.displays[entry.cooldownID]
+    if not display or not display.isBar then return end
+    local item = addon.Runtime and addon.Runtime:GetLiveItem(entry.cooldownID)
+    local iconSize, barWidth, barHeight = GetBarDimensions(entry, item)
+    display:SetSize(iconSize + barWidth, math.max(iconSize, barHeight))
+    display.Icon:ClearAllPoints()
+    display.Icon:SetPoint("LEFT", display, "LEFT", 0, 0)
+    display.Icon:SetSize(iconSize, iconSize)
+    display.BarBackground:ClearAllPoints()
+    display.BarBackground:SetPoint("LEFT", display.Icon, "RIGHT", 0, 0)
+    display.BarBackground:SetSize(barWidth, barHeight)
+    local cooldown = display.LiveCooldown or display.Cooldown
+    cooldown:ClearAllPoints()
+    cooldown:SetAllPoints(display.Icon)
+    self:ApplyTextLayout(display)
+    self:RefreshDisplay(display)
+end

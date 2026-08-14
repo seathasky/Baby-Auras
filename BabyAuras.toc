@@ -1,0 +1,66 @@
+## Interface: 120100
+## Title: Baby Auras
+## Author: Seathasky
+## Version: 1.0.0
+## Notes: Custom TTS and glow alerts for Blizzard Cooldown Manager entries
+## IconTexture: Interface\AddOns\BabyAuras\Media\Images\BALogoTIconCentered.png
+## SavedVariablesPerCharacter: BabyAurasDB
+## DefaultState: enabled
+## Dependencies: Blizzard_SharedXML, Blizzard_CooldownViewer, Blizzard_ActionBar
+
+Libs\LibStub\LibStub.lua
+Libs\CallbackHandler-1.0\CallbackHandler-1.0.lua
+Libs\LibSharedMedia-3.0\lib.xml
+Libs\LibDataBroker-1.1\LibDataBroker-1.1.lua
+Libs\LibDBIcon-1.0\LibDBIcon-1.0.lua
+Libs\LibPixelPerfect-1.0\lib.xml
+Core\Defaults.lua
+GUI\Bootstrap.lua
+Core\Addon.lua
+GUI\Theme.lua
+Core\Catalog.lua
+Alerts\Audio.lua
+Alerts\Glow.lua
+Alerts\Effects.lua
+Solo\Bootstrap.lua
+Solo\Utilities.lua
+Solo\Linking.lua
+Solo\Controller.lua
+Solo\EditMode.lua
+Solo\Mirroring.lua
+Solo\Preview.lua
+Solo\Lifecycle.lua
+Solo\Management.lua
+Solo\Appearance.lua
+Solo\Text.lua
+Solo\Sizing.lua
+Solo\Positioning.lua
+Solo\Display.lua
+Core\Runtime.lua
+GUI\Navigation.lua
+GUI\Widgets.lua
+GUI\Layout.lua
+GUI\Preview.lua
+GUI\CDMBridge.lua
+GUI\Settings.lua
+GUI\Alerts.lua
+GUI\Audio.lua
+GUI\SoloSettings.lua
+GUI\EditorController.lua
+GUI\Refresh.lua
+GUI\About.lua
+GUI\Sections\Trigger.lua
+GUI\Sections\Display.lua
+GUI\Sections\Theme.lua
+GUI\Sections\Alerts.lua
+GUI\Sections\Audio.lua
+GUI\Sections\Icon.lua
+GUI\Window.lua
+GUI\Controller.lua
+Tutorial\Bootstrap.lua
+Tutorial\Steps.lua
+Tutorial\Experiences.lua
+Tutorial\Overlay.lua
+Tutorial\Window.lua
+Tutorial\Controller.lua
+Integrations\Minimap.lua
