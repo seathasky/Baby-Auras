@@ -36,7 +36,7 @@ Runtime.sectionDefinitions = {
 
 function Runtime:ResolveItem(item)
     local ok, cooldownID = addon:TryMethod(item, "GetCooldownID")
-    if not ok or not cooldownID or addon:IsSecret(cooldownID) then return nil end
+    if not ok or addon:IsSecret(cooldownID) or type(cooldownID) ~= "number" then return nil end
     return addon.Catalog:Get(cooldownID)
 end
 
@@ -50,9 +50,18 @@ function Runtime:RefreshItem(item)
 end
 
 function Runtime:Dispatch(item, trigger)
-    addon.Solo:OnTrigger(item, trigger)
     local entry = self.itemEntries[item]
     if not entry then return end
+    if addon.NativeCooldownTriggers
+        and addon.NativeCooldownTriggers:IsManagedTrigger(entry, trigger) then
+        if trigger == Enum.CooldownViewerAlertEventType.ChargeGained then
+            addon.NativeCooldownTriggers:HandleNativeChargeGained(entry)
+        elseif trigger == Enum.CooldownViewerAlertEventType.OnCooldown then
+            addon.NativeCooldownTriggers:HandleNativeStarted(entry)
+        end
+        return
+    end
+    addon.Solo:OnTrigger(item, trigger)
     if trigger == Enum.CooldownViewerAlertEventType.OnCooldown
         or trigger == Enum.CooldownViewerAlertEventType.OnAuraRemoved then
         addon.Effects:HideGlow(item)

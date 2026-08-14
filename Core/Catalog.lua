@@ -15,9 +15,6 @@ local categories = {
     Enum.CooldownViewerCategory.EquipSlotTracked,
 }
 
--- Blizzard's CDM metadata can resolve a visual variant whose texture does not
--- match the player-facing spell tooltip. Keep confirmed display corrections
--- local to Baby Auras without changing the cooldown/event identity.
 local displayOverridesByCooldownID = {
     [198408] = { spellID = 1295924, name = "Prismatic Bolt", realIcon = 8026694 },
 }

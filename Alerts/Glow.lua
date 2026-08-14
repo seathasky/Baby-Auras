@@ -1,7 +1,6 @@
 local _, addon = ...
 
 -- Baby Auras owns this small glow renderer.  Custom animated styles are only
--- hosted on our Solo frames; Blizzard CDM frames use Blizzard's alert manager.
 local Glow = {
     active = setmetatable({}, { __mode = "k" }),
     styles = {
@@ -144,6 +143,11 @@ function Glow:Stop(target)
     self.active[host] = nil
     HideTextures(host)
     host:Hide()
+end
+
+function Glow:SetAlpha(target, alpha)
+    local host = target and target.__babyAurasGlowHost
+    if host then host:SetAlpha(alpha) end
 end
 
 function Glow:Start(target, style, color, options)

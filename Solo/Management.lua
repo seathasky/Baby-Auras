@@ -168,8 +168,7 @@ function Solo:ReconcileDisplays()
     end
 end
 
--- Kept as a no-op compatibility entry point for Runtime. Baby Auras must never
--- reposition, resize, or add fields to Blizzard's protected pooled aura items.
+-- Kept as a no-op compatibility entry point for Runtime.
 function Solo:CompactViewer() end
 
 function Solo:SetEnabled(entry, enabled)

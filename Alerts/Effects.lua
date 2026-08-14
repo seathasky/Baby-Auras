@@ -29,6 +29,16 @@ end
 
 function Effects:Speak(text, rate, volume)
     if not text or text == "" then return false end
+    if TextToSpeechFrame_PlayCooldownAlertMessage then
+        return pcall(TextToSpeechFrame_PlayCooldownAlertMessage, nil, text, true)
+    elseif C_CombatAudioAlert and C_CombatAudioAlert.SpeakText then
+        return pcall(
+            C_CombatAudioAlert.SpeakText,
+            text, Enum.CombatAudioAlertCategory.General, true
+        )
+    end
+
+    -- Compatibility fallback for clients without the cooldown-alert APIs.
     if not self.voice then self:CacheVoice() end
     if not self.voice or not C_VoiceChat.SpeakText then return false end
     rate = Clamp(tonumber(rate) or Defaults.trigger.speechRate, -10, 10)
@@ -88,8 +98,25 @@ function Effects:IsGlowActive(item)
     return item ~= nil and self.activeGlowTargets[item] ~= nil
 end
 
+function Effects:SetGlowAlpha(item, alpha)
+    if not item then return end
+    local target = self.activeGlowTargets[item]
+    if not target then return end
+    if addon.Glow then addon.Glow:SetAlpha(target, alpha) end
+    if target.SpellActivationAlert then
+        target.SpellActivationAlert:SetAlpha(alpha)
+    end
+end
+
 function Effects:HideGlow(item)
     if not item then return end
+    -- The Blizzard item may have been recycled or detached since this glow was
+    -- started. Clear the exact cached Solo target before trying live resolution.
+    local activeTarget = self.activeGlowTargets[item]
+    if activeTarget then
+        self:HideGlowTarget(activeTarget)
+        return
+    end
     self:HideGlowTarget(item)
     local target = self:GetGlowTarget(item)
     if target ~= item then self:HideGlowTarget(target) end

@@ -16,6 +16,37 @@ function Solo:MirrorCount(item, value)
     pcall(display.Count.SetText, display.Count, value)
 end
 
+local function IsAccessible(value)
+    if addon:IsSecret(value) then return false end
+    return not canaccessvalue or canaccessvalue(value)
+end
+
+local function ResolveCooldownSpellID(entry)
+    if not entry then return nil end
+    -- Fetch the info live: override fields can change after talents, casts, and viewer refreshes.
+    local info = entry.info or {}
+    if C_CooldownViewer and C_CooldownViewer.GetCooldownViewerCooldownInfo then
+        local ok, liveInfo = pcall(
+            C_CooldownViewer.GetCooldownViewerCooldownInfo, entry.cooldownID
+        )
+        if ok and liveInfo then info = liveInfo end
+    end
+    local spellID = info.overrideTooltipSpellID or info.overrideSpellID
+        or info.spellID or entry.spellID
+    if not IsAccessible(spellID) or type(spellID) ~= "number" then return nil end
+    return spellID
+end
+
+local function GetLiveChargeInfo(entry)
+    if not C_Spell or not C_Spell.GetSpellCharges then return nil end
+    local spellID = ResolveCooldownSpellID(entry)
+    if not spellID then return nil end
+
+    local ok, chargeInfo = pcall(C_Spell.GetSpellCharges, spellID)
+    if not ok or not chargeInfo then return nil end
+    return chargeInfo, spellID
+end
+
 function Solo:MirrorBarText(item, key, value)
     local entry = addon.Runtime.itemEntries[item]
     local display = entry and self.displays[entry.cooldownID]
@@ -113,6 +144,13 @@ function Solo:MirrorCooldown(item, action, ...)
     elseif action == "useAuraTime" then
         pcall(cooldown.SetUseAuraDisplayTime, cooldown, ...)
     end
+
+    -- Blizzard may clear or replace the native duration object during the same
+    -- refresh. Do the same for BabyAuras' separate cooldown widget.
+    if not EntryUsesAura(entry) and (action == "durationObject"
+        or action == "duration" or action == "expiration" or action == "clear") then
+        self:SyncSpellCooldown(display)
+    end
 end
 
 function Solo:UpdateActiveState(item, display)
@@ -131,20 +169,35 @@ end
 function Solo:SyncSpellCooldown(display)
     local entry = display and display.entry
     if not entry or not C_Spell then return end
-    local info = entry.info or {}
     -- Aura duration is owned by Blizzard's live cooldown widget and arrives via
     -- SetCooldownFromDurationObject. Spell APIs describe the underlying spell CD.
     if EntryUsesAura(entry) then return end
-    local spellID = info.overrideSpellID or entry.spellID
+    local spellID = ResolveCooldownSpellID(entry)
+    if not spellID then return end
     local durationObject
-    if info.charges and C_Spell.GetSpellChargeDuration then
-        durationObject = C_Spell.GetSpellChargeDuration(spellID)
+    local chargeInfo = GetLiveChargeInfo(entry)
+    local currentCharges
+    local hasCharges = false
+    if chargeInfo and C_Spell.GetSpellChargeDuration then
+        local maxCharges = chargeInfo.maxCharges
+        hasCharges = maxCharges > 1
+        if hasCharges then
+            currentCharges = chargeInfo.currentCharges
+            local ok, result = pcall(C_Spell.GetSpellChargeDuration, spellID)
+            if ok then durationObject = result end
+        end
+    end
+    if hasCharges then
+        pcall(display.Count.SetText, display.Count, currentCharges)
+    else
+        pcall(display.Count.SetText, display.Count, "")
     end
     if not durationObject and C_Spell.GetSpellCooldownDuration then
-        durationObject = C_Spell.GetSpellCooldownDuration(spellID, true)
+        local ok, result = pcall(C_Spell.GetSpellCooldownDuration, spellID)
+        if ok then durationObject = result end
     end
     if durationObject and display.Cooldown.SetCooldownFromDurationObject then
-        pcall(display.Cooldown.SetCooldownFromDurationObject, display.Cooldown, durationObject, true)
+        pcall(display.Cooldown.SetCooldownFromDurationObject, display.Cooldown, durationObject)
     end
 end
 
@@ -156,7 +209,7 @@ function Solo:SyncAuraCooldown(item, display)
     end
     local unitOK, unit = pcall(item.GetAuraDataUnit, item)
     local instanceOK, auraInstanceID = pcall(item.GetAuraSpellInstanceID, item)
-    if not unitOK or not instanceOK or not unit or not auraInstanceID then return false end
+    if not unitOK or not instanceOK or not unit then return false end
 
     -- Keep the aura instance opaque. In 12.1 it may be secret: it is passed
     -- directly to Blizzard's duration-object API and is never compared, indexed,
@@ -296,17 +349,27 @@ end
 function Solo:InstallMirrors(item, display)
     local function InstallCountSource(countSource)
         if not countSource then return end
+        local function RefreshCount(_, value)
+            -- Stack text can itself be protected. Pass it directly to the
+            -- FontString; SetText(nil) already provides the empty-state behavior.
+            Solo:MirrorCount(item, value)
+        end
         if not self.mirrorHooks[countSource] then
             self.mirrorHooks[countSource] = true
-            hooksecurefunc(countSource, "SetText", function(_, value)
-                Solo:MirrorCount(item, value)
-            end)
+            hooksecurefunc(countSource, "SetText", RefreshCount)
         end
-        pcall(function() display.Count:SetText(countSource:GetText()) end)
+        pcall(function() RefreshCount(countSource, countSource:GetText()) end)
     end
-    InstallCountSource(item.Applications and item.Applications.Applications)
-    InstallCountSource(item.ChargeCount and item.ChargeCount.Current)
-    InstallCountSource(item.Icon and item.Icon.Applications)
+
+    -- Aura categories own Applications text. Cooldown categories must never
+    -- inherit it: Blizzard pools these widgets, so a stale aura stack such as
+    -- "2" can otherwise leak onto a non-charge spell (Ice Cold/Alter Time).
+    if EntryUsesAura(display.entry) then
+        InstallCountSource(item.Applications and item.Applications.Applications)
+        InstallCountSource(item.Icon and item.Icon.Applications)
+    else
+        display.Count:SetText("")
+    end
 
     local sourceCooldown = item.Cooldown
     if type(item.GetCooldownFrame) == "function" then

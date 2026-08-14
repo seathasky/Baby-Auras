@@ -125,8 +125,6 @@ events:SetScript("OnEvent", function(_, event, arg1)
     elseif event == "PLAYER_SPECIALIZATION_CHANGED" and arg1 ~= "player" then
         return
     elseif event == "PLAYER_SPECIALIZATION_CHANGED" or event == "ACTIVE_TALENT_GROUP_CHANGED" then
-        -- CDM rebuilds its pooled frames asynchronously when the active spec changes.
-        -- Reconcile once promptly and once after that rebuild has settled.
         C_Timer.After(0.2, function() addon:RefreshAll() end)
         C_Timer.After(1.0, function() addon:RefreshAll() end)
     elseif event ~= "ADDON_LOADED" then

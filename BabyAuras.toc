@@ -1,9 +1,9 @@
 ## Interface: 120100
 ## Title: Baby Auras
 ## Author: Seathasky
-## Version: 1.0.0
+## Version: 1.0.1
 ## X-Curse-Project-ID: 1651752
-## Notes: Custom TTS and glow alerts for Blizzard Cooldown Manager entries
+## Notes: Enhances World of Warcraft's built-in Cooldown Manager.
 ## IconTexture: Interface\AddOns\BabyAuras\Media\Images\BALogoTIconCentered.png
 ## SavedVariablesPerCharacter: BabyAurasDB
 ## DefaultState: enabled
@@ -38,6 +38,7 @@ Solo\Sizing.lua
 Solo\Positioning.lua
 Solo\Display.lua
 Core\Runtime.lua
+Core\NativeCooldownTriggers.lua
 GUI\Navigation.lua
 GUI\Widgets.lua
 GUI\Layout.lua
