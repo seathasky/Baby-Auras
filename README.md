@@ -2,7 +2,7 @@
 
 The cooldown manager addon with an earlier bedtime.
 
-Baby Auras builds on World of Warcraft's Cooldown Manager, adding configurable alerts and freely positioned Solo icons without replacing Blizzard's setup.
+Baby Auras is minimal and user friendly. It enhances World of Warcraft's built-in Cooldown Manager with configurable alerts, freely positioned Solo icons, and additional customization.
 
 ## Features
 
