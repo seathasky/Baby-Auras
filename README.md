@@ -1,4 +1,4 @@
-# Baby Auras
+# BabyAuras
 
 The cooldown manager addon with an earlier bedtime.
 
