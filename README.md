@@ -15,13 +15,12 @@ BabyAuras is minimal and user friendly. It enhances World of Warcraft's built-in
 *   Full user tutorial to help you get started with BA.
 
 
-**Baby Auras — Gameplay Preview**
 
-<a href="https://www.youtube.com/watch?v=DAU2-KHx0pE"><img src="https://i.imgur.com/bYuPLEv.png" alt="Video Cover" /></a>
+## Baby Auras - Gameplay Preview
+
+[https://www.youtube.com/watch?v=DAU2-KHx0pE](https://www.youtube.com/watch?v=DAU2-KHx0pE)
 
 
 ## Support
 
-**Get support on our official Discord!**
-
-[![Join my Discord](https://discord.com/api/guilds/1472536200655929530/widget.png?style=banner2)](https://discord.gg/9w6ZdaksDX)
+https://discord.gg/9w6ZdaksDX
