@@ -2,8 +2,6 @@
 
 <img src="https://i.imgur.com/yC1RB8N.png" alt="Baby Auras logo" width="120">
 
-The cooldown manager addon with an earlier bedtime.
-
 BabyAuras is minimal and user friendly. It enhances World of Warcraft's built-in Cooldown Manager with configurable alerts, freely positioned Solo icons, and additional customization.
 
 ![Baby Auras interface preview](https://i.imgur.com/2oidWx5.png)
