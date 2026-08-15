@@ -67,7 +67,7 @@ end
 function GUI:SetGlowStyle(style)
     if not self.selected or not self.selectedTrigger then return end
     self.selectedGlowStyle = style or Defaults.trigger.glowStyle
-    if self.frame and self.frame.ActiveSoloCropped and self.selectedGlowStyle == "blizzard" then
+    if self.frame and self.frame.ActiveTrackedBar and self.selectedGlowStyle == "blizzard" then
         self.selectedGlowStyle = "pixel"
     end
     local settings = addon:GetTriggerSettings(self.selected.cooldownID, self.selectedTrigger, true)

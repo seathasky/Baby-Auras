@@ -40,15 +40,7 @@ function Solo:CreateDisplay(entry, item)
     editOutline:Hide()
     display.EditOutline = editOutline
 
-    local iconParent = display
-    if not isBar then
-        iconParent = CreateFrame("Frame", nil, display)
-        iconParent:SetAllPoints()
-        iconParent:SetClipsChildren(true)
-        iconParent:SetFrameLevel(display:GetFrameLevel() + 1)
-        display.IconClip = iconParent
-    end
-    local icon = iconParent:CreateTexture(nil, "ARTWORK")
+    local icon = display:CreateTexture(nil, "ARTWORK")
     if isBar then
         local iconSize = GetBarDimensions(entry, item)
         icon:SetPoint("LEFT")
@@ -96,7 +88,7 @@ function Solo:CreateDisplay(entry, item)
         cooldown:SetPoint("TOPLEFT", icon, "TOPLEFT")
         cooldown:SetPoint("BOTTOMRIGHT", icon, "BOTTOMRIGHT")
     else
-        cooldown:SetAllPoints(display.IconClip)
+        cooldown:SetAllPoints()
     end
     cooldown:SetReverse(true)
     cooldown:SetUseAuraDisplayTime(true)
@@ -111,7 +103,7 @@ function Solo:CreateDisplay(entry, item)
     if isBar then
         pixelBorder:SetAllPoints(icon)
     else
-        pixelBorder:SetAllPoints(display.IconClip)
+        pixelBorder:SetAllPoints()
     end
     pixelBorder:EnableMouse(false)
     pixelBorder:SetFrameLevel(display:GetFrameLevel() + 7)

@@ -62,31 +62,6 @@ function Display:Build(editor, frame)
     size:SetScript("OnValueChanged", function(_, value) GUI:OnSoloSizeChanged(value) end)
     frame.SoloSize, frame.SoloSizeLabel, frame.SoloSizeValue = size, sizeLabel, sizeValue
 
-    local cropEnabled, cropEnabledLabel = Widgets.CreateCheckbox(editor, "Icon crop", 100)
-    cropEnabled:SetPoint("TOPLEFT", size, "BOTTOMLEFT", -4, -17)
-    cropEnabled:SetScript("OnClick", function(self) GUI:OnSoloCropEnabledClicked(self) end)
-    frame.SoloCropEnabled, frame.SoloCropEnabledLabel = cropEnabled, cropEnabledLabel
-
-    local function CreateCropSlider(labelText, settingKey, anchor)
-        local label = editor:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-        label:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 4, -17)
-        label:SetText(labelText)
-        local slider = CreateSlider(editor, 0, 100, 150)
-        slider:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -5)
-        local value = editor:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-        value:SetPoint("LEFT", slider, "RIGHT", 8, 0)
-        value:SetText("0%")
-        slider:SetScript("OnValueChanged", function(_, sliderValue)
-            GUI:OnSoloCropChanged(settingKey, sliderValue, value, labelText)
-        end)
-        return label, slider, value
-    end
-
-    local cropBottomLabel, cropBottom, cropBottomValue =
-        CreateCropSlider("Crop Icon Amount", "soloCropBottom", cropEnabled)
-    frame.SoloCropBottom, frame.SoloCropBottomLabel, frame.SoloCropBottomValue =
-        cropBottom, cropBottomLabel, cropBottomValue
-
     local function CreateBarSlider(labelText, settingKey, minValue, maxValue, x, y)
         local label = editor:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
         label:SetText(labelText)
@@ -121,7 +96,7 @@ function Display:Build(editor, frame)
     frame.SoloBarControls = { bar.icon, bar.width, bar.height, bar.text, bar.match }
 
     local showSwipe, showSwipeLabel = Widgets.CreateCheckbox(editor, "Timer wheel", 105)
-    showSwipe:SetPoint("TOPLEFT", cropBottom, "BOTTOMLEFT", -4, -17)
+    showSwipe:SetPoint("TOPLEFT", size, "BOTTOMLEFT", -4, -17)
     showSwipe:SetScript("OnClick", function(self)
         GUI:OnAppearanceClicked("soloShowSwipe", self, "Timer wheel preference")
     end)
@@ -285,8 +260,6 @@ function Display:Build(editor, frame)
     controls.panel, controls.solo, controls.soloLabel = panel, solo, soloLabel
     controls.onTop, controls.onTopLabel = onTop, onTopLabel
     controls.size, controls.sizeLabel, controls.sizeValue = size, sizeLabel, sizeValue
-    controls.cropEnabled, controls.cropEnabledLabel = cropEnabled, cropEnabledLabel
-    controls.cropBottom, controls.cropBottomLabel, controls.cropBottomValue = cropBottom, cropBottomLabel, cropBottomValue
     controls.bar = bar
     controls.showSwipe, controls.showSwipeLabel = showSwipe, showSwipeLabel
     controls.showNumbers, controls.showNumbersLabel = showNumbers, showNumbersLabel
@@ -314,8 +287,6 @@ function Display:Build(editor, frame)
         gap = -17, collapseHeight = 410,
         elements = {
             panel, solo, soloLabel, onTop, onTopLabel, size, sizeLabel, sizeValue,
-            cropEnabled, cropEnabledLabel,
-            cropBottomLabel, cropBottom, cropBottomValue,
             bar.iconLabel, bar.icon, bar.iconValue, bar.widthLabel, bar.width, bar.widthValue,
             bar.heightLabel, bar.height, bar.heightValue, bar.textLabel, bar.text, bar.textValue,
             bar.match, bar.matchLabel, showSwipe, showSwipeLabel, showNumbers, showNumbersLabel,
