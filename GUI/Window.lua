@@ -651,6 +651,8 @@ function GUI:Create()
     local soloPanel, solo, soloLabel = displaySection.panel, displaySection.solo, displaySection.soloLabel
     local soloOnTop, soloOnTopLabel = displaySection.onTop, displaySection.onTopLabel
     local soloSize, soloSizeLabel, soloSizeValue = displaySection.size, displaySection.sizeLabel, displaySection.sizeValue
+    local soloCropEnabled, soloCropEnabledLabel = displaySection.cropEnabled, displaySection.cropEnabledLabel
+    local soloCropBottom, soloCropBottomLabel, soloCropBottomValue = displaySection.cropBottom, displaySection.cropBottomLabel, displaySection.cropBottomValue
     local soloBar = displaySection.bar
     local soloShowSwipe, soloShowSwipeLabel = displaySection.showSwipe, displaySection.showSwipeLabel
     local soloShowNumbers, soloShowNumbersLabel = displaySection.showNumbers, displaySection.showNumbersLabel
@@ -734,7 +736,7 @@ function GUI:Create()
 
     -- Controls and labels disabled when the selected trigger is unavailable.
     frame.TriggerGateControls = {
-        solo, soloOnTop, soloSize, soloBar.icon, soloBar.width, soloBar.height, soloBar.text, soloBar.match,
+        solo, soloOnTop, soloSize, soloCropEnabled, soloCropBottom, soloBar.icon, soloBar.width, soloBar.height, soloBar.text, soloBar.match,
         soloShowSwipe, soloShowNumbers, soloKeepColored, soloClassSwipe, soloActiveBorder,
         soloAlwaysShow, soloDesaturateInactive, soloShowStacks, soloOpacity, soloStackSize, soloCooldownSize,
         stackX, stackY, cooldownX, cooldownY, soloHotkey, soloHotkeySize, hotkeyX, hotkeyY,
@@ -747,6 +749,7 @@ function GUI:Create()
     }
     frame.TriggerGateElements = {
         displayTitle, displayLine, soloPanel, solo, soloLabel, soloOnTop, soloOnTopLabel, soloSize, soloSizeLabel, soloSizeValue,
+        soloCropEnabled, soloCropEnabledLabel, soloCropBottom, soloCropBottomLabel, soloCropBottomValue,
         soloBar.iconLabel, soloBar.icon, soloBar.iconValue,
         soloBar.widthLabel, soloBar.width, soloBar.widthValue,
         soloBar.heightLabel, soloBar.height, soloBar.heightValue,
@@ -795,6 +798,7 @@ function GUI:Create()
     }
     frame.SoloOptionElements = {
         soloOnTop, soloOnTopLabel, soloSize, soloSizeLabel, soloSizeValue,
+        soloCropEnabled, soloCropEnabledLabel, soloCropBottom, soloCropBottomLabel, soloCropBottomValue,
         soloBar.iconLabel, soloBar.icon, soloBar.iconValue,
         soloBar.widthLabel, soloBar.width, soloBar.widthValue,
         soloBar.heightLabel, soloBar.height, soloBar.heightValue,
@@ -824,6 +828,7 @@ function GUI:Create()
     }
     frame.SoloEligibilityElements = {
         soloPanel, soloOnTop, soloOnTopLabel, soloSize, soloSizeLabel, soloSizeValue,
+        soloCropEnabled, soloCropEnabledLabel, soloCropBottom, soloCropBottomLabel, soloCropBottomValue,
         soloBar.iconLabel, soloBar.icon, soloBar.iconValue,
         soloBar.widthLabel, soloBar.width, soloBar.widthValue,
         soloBar.heightLabel, soloBar.height, soloBar.heightValue,

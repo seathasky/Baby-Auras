@@ -31,6 +31,28 @@ function GUI:OnSoloSizeChanged(value)
     self:SetStatus("Solo size saved automatically.")
 end
 
+function GUI:OnSoloCropChanged(settingKey, value, valueElement, label)
+    local percent = Clamp(math.floor((tonumber(value) or 0) + 0.5), 0, 100)
+    valueElement:SetText(percent .. "%")
+    if self.refreshing or not self.selected then return end
+    local settings = addon:GetEntrySettings(self.selected.cooldownID, true)
+    settings[settingKey] = percent
+    local display = addon.Solo.displays[self.selected.cooldownID]
+    if display and not display.isBar then addon.Solo:RefreshDisplay(display) end
+    self:SetStatus(label .. " saved automatically.")
+end
+
+function GUI:OnSoloCropEnabledClicked(checkbox)
+    if self.refreshing or not self.selected then return end
+    local settings = addon:GetEntrySettings(self.selected.cooldownID, true)
+    settings.soloCropEnabled = checkbox:GetChecked() == true
+    local display = addon.Solo.displays[self.selected.cooldownID]
+    if display then addon.Solo:RefreshDisplay(display) end
+    self:UpdateSoloControls()
+    self:RefreshEditor()
+    self:SetStatus(settings.soloCropEnabled and "Icon crop enabled." or "Icon crop disabled.")
+end
+
 function GUI:OnSoloBarDimensionChanged(settingKey, value, valueElement, label)
     local limits = settingKey == "soloBarWidth" and { 80, 400 }
         or settingKey == "soloBarHeight" and { 4, 80 }
@@ -229,8 +251,19 @@ function GUI:UpdateSoloControls()
     self.frame.SoloSize:SetAlpha(available and 1 or 0.32)
     self.frame.SoloSizeLabel:SetAlpha(available and 1 or 0.32)
     self.frame.SoloSizeValue:SetAlpha(available and 1 or 0.32)
+    local cropAvailable = available and self.frame.ActiveTrackedBar ~= true
+        and self.frame.SoloCropEnabled:GetChecked() == true
+    self.frame.SoloCropEnabled:SetEnabled(available and self.frame.ActiveTrackedBar ~= true)
+    self.frame.SoloCropEnabled:SetAlpha(available and self.frame.ActiveTrackedBar ~= true and 1 or 0.32)
+    self.frame.SoloCropEnabledLabel:SetAlpha(available and self.frame.ActiveTrackedBar ~= true and 1 or 0.32)
     for _, control in ipairs(self.frame.SoloOptionControls or {}) do control:SetEnabled(available) end
     for _, element in ipairs(self.frame.SoloOptionElements or {}) do element:SetAlpha(available and 1 or 0.32) end
+    self.frame.SoloCropBottom:SetEnabled(cropAvailable)
+    for _, element in ipairs({
+        self.frame.SoloCropBottom, self.frame.SoloCropBottomLabel, self.frame.SoloCropBottomValue,
+    }) do
+        element:SetAlpha(cropAvailable and 1 or 0.32)
+    end
     for _, control in ipairs(self.frame.SoloBarControls or {}) do control:SetEnabled(available) end
     local independentBarIcon = available and self.frame.ActiveTrackedBar == true
         and self.frame.SoloBarMatchIcon:GetChecked() ~= true

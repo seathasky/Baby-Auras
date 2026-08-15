@@ -17,7 +17,7 @@ function Effects:GetGlowTarget(item, style)
         if style == "blizzard" and display.isBar and display.ProcGlowTarget then
             return display.ProcGlowTarget, true
         end
-        return display, true
+        return display.isBar and display or display.IconClip, true
     end
     return item, false
 end
@@ -51,7 +51,10 @@ function Effects:ShowGlow(item, settings)
     local style = settings.glowStyle or Defaults.trigger.glowStyle
     local entry = addon.Runtime and addon.Runtime.itemEntries[item]
     local display = entry and addon.Solo and addon.Solo.displays[entry.cooldownID]
-    if display and display.isBar and style == "blizzard" then style = "pixel" end
+    if display and not display.isBar and style == "blizzard" then
+        local entrySettings = addon:GetEntrySettings(entry.cooldownID, false)
+        if entrySettings and entrySettings.soloCropEnabled == true then style = "pixel" end
+    end
     local target, isSolo = self:GetGlowTarget(item, style)
     if not target then return end
     -- Clear the alternate tracked-bar target so changing styles cannot leave

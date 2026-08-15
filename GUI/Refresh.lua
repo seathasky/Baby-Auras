@@ -133,13 +133,23 @@ function GUI:RefreshEditor(message)
     frame.SoloSizeLabel:SetShown(soloEligible)
     frame.SoloSizeValue:SetShown(soloEligible)
     frame.SoloSize:SetValue(entrySettings and entrySettings.soloScale or Defaults.soloScale)
+    frame.SoloCropEnabled:SetChecked(entrySettings and entrySettings.soloCropEnabled == true)
+    frame.SoloCropBottom:SetValue(entrySettings and entrySettings.soloCropBottom or 0)
     local liveItem = addon.Runtime:GetLiveItem(entry.cooldownID)
     local isTrackedBar = liveItem and addon.Solo:IsTrackedBarItem(liveItem) or false
     frame.ActiveTrackedBar = isTrackedBar
+    frame.ActiveSoloCropped = not isTrackedBar and entrySettings and entrySettings.soloCropEnabled == true
+    local showCrop = soloEligible and not isTrackedBar
+    frame.SoloCropEnabled:SetShown(showCrop)
+    frame.SoloCropEnabledLabel:SetShown(showCrop)
+    frame.SoloCropBottom:SetShown(showCrop)
+    frame.SoloCropBottomLabel:SetShown(showCrop)
+    frame.SoloCropBottomValue:SetShown(showCrop)
     frame.SoloSizeLabel:SetText(isTrackedBar and "Global size" or "Icon size")
     for _, element in ipairs(frame.SoloBarElements or {}) do element:SetShown(isTrackedBar) end
     frame.SoloShowSwipe:ClearAllPoints()
-    frame.SoloShowSwipe:SetPoint("TOPLEFT", frame.SoloSize, "BOTTOMLEFT", -4, isTrackedBar and -147 or -17)
+    frame.SoloShowSwipe:SetPoint("TOPLEFT", isTrackedBar and frame.SoloSize or frame.SoloCropBottom,
+        "BOTTOMLEFT", -4, isTrackedBar and -147 or -17)
     if isTrackedBar then
         local sourceHeight = liveItem:GetHeight()
         local sourceWidth = liveItem:GetWidth()
@@ -249,7 +259,7 @@ function GUI:RefreshEditor(message)
     frame.Enabled:SetChecked(settings and settings.enabled or false)
     frame.Glow:SetChecked(settings and settings.glow or false)
     self.selectedGlowStyle = settings and settings.glowStyle or Defaults.trigger.glowStyle
-    if isTrackedBar and self.selectedGlowStyle == "blizzard" then
+    if frame.ActiveSoloCropped and self.selectedGlowStyle == "blizzard" then
         self.selectedGlowStyle = "pixel"
         if settings then settings.glowStyle = "pixel" end
     end

@@ -10,6 +10,7 @@ local GetClassColor = Utilities.GetClassColor
 local GetPhysicalPixelSize = Utilities.GetPhysicalPixelSize
 local IsSoloEnabled = Utilities.IsSoloEnabled
 local EDIT_SELECTION_COLOR = { r = 0.20, g = 1, b = 0.35 }
+local ICON_LEFT, ICON_RIGHT = 0.08, 0.92
 
 local function IsBlackBorderEnabled(display, settings)
     if settings.soloBlackBorder ~= nil then return settings.soloBlackBorder == true end
@@ -118,13 +119,28 @@ function Solo:RefreshDisplay(display)
     local enabled = IsSoloEnabled(entry)
     local positioning = self:IsPositioningMode()
     display.Icon:SetTexture(self:GetTexture(entry))
+    local appearance = GetEntryAppearance(entry)
+    display.Icon:SetTexCoord(ICON_LEFT, ICON_RIGHT, ICON_LEFT, ICON_RIGHT)
+    if not display.isBar then
+        local cropBottom = appearance.soloCropEnabled == true
+            and Clamp(tonumber(appearance.soloCropBottom) or 0, 0, 100) / 100 or 0
+        local visibleHeight = math.max(0.01, 1 - cropBottom)
+        local width, height = display:GetWidth(), display:GetHeight()
+        display.IconClip:ClearAllPoints()
+        display.IconClip:SetPoint("TOPLEFT")
+        display.IconClip:SetSize(width, height * visibleHeight)
+        display.Icon:ClearAllPoints()
+        display.Icon:SetSize(width, height)
+        display.Icon:SetPoint("TOPLEFT", display.IconClip, "TOPLEFT")
+    else
+        display.Icon:SetTexCoord(ICON_LEFT, ICON_RIGHT, ICON_LEFT, ICON_RIGHT)
+    end
     if display.BarName then display.BarName:SetText(entry.name) end
     local showEditorBadge = positioning and BabyAurasDB.hideSoloLabels ~= true
     -- Tracked bars have a much smaller icon footprint, so the image badge
     -- obscures the spell art. Keep only the blue B on bars while positioning.
     display.Badge:SetShown(showEditorBadge and not display.isBar)
     display.BadgeLetter:SetShown(showEditorBadge)
-    local appearance = GetEntryAppearance(entry)
     local activeBorder = appearance.soloActiveBorder == true and display.activeState == true
     local selectedEntry = addon.GUI and addon.GUI.selected
     local editSelected = positioning and selectedEntry

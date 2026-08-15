@@ -31,10 +31,12 @@ function Alerts:Build(editor, anchor, frame)
             end, function(value)
                 GUI:SetGlowStyle(value)
             end, optionData.key)
-            if optionData.key == "blizzard" and GUI.frame.ActiveTrackedBar then
+                    if optionData.key == "blizzard" and GUI.frame.ActiveSoloCropped then
                 option:SetEnabled(false)
                 option:SetTitleAndTextTooltip("Blizzard Proc unavailable",
-                    "Tracked bars support Pixel Glow and Extended Glow. Other icon categories can use Blizzard Proc.")
+                            GUI.frame.ActiveSoloCropped
+                                and "Cropped icons support Pixel Glow and Extended Glow."
+                                or "Tracked bars support Pixel Glow and Extended Glow. Other icon categories can use Blizzard Proc.")
             end
         end
     end)
