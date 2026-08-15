@@ -29,21 +29,26 @@ end
 
 function Effects:Speak(text, rate, volume)
     if not text or text == "" then return false end
-    if TextToSpeechFrame_PlayCooldownAlertMessage then
-        return pcall(TextToSpeechFrame_PlayCooldownAlertMessage, nil, text, true)
+    if C_VoiceChat and C_VoiceChat.SpeakText then
+        if not self.voice then self:CacheVoice() end
+        if self.voice then
+            rate = Clamp(tonumber(rate) or Defaults.trigger.speechRate, -10, 10)
+            volume = Clamp(tonumber(volume) or Defaults.trigger.ttsVolume, 0, 100)
+            return pcall(C_VoiceChat.SpeakText, self.voice.voiceID, text, rate, volume, true)
+        end
+    end
+
+    -- Compatibility fallbacks for clients without the rate-aware API.
+    local legacySpeak = rawget(_G, "TextToSpeechFrame_PlayCooldownAlertMessage")
+    if legacySpeak then
+        return pcall(legacySpeak, nil, text, true)
     elseif C_CombatAudioAlert and C_CombatAudioAlert.SpeakText then
         return pcall(
             C_CombatAudioAlert.SpeakText,
             text, Enum.CombatAudioAlertCategory.General, true
         )
     end
-
-    -- Compatibility fallback for clients without the cooldown-alert APIs.
-    if not self.voice then self:CacheVoice() end
-    if not self.voice or not C_VoiceChat.SpeakText then return false end
-    rate = Clamp(tonumber(rate) or Defaults.trigger.speechRate, -10, 10)
-    volume = Clamp(tonumber(volume) or Defaults.trigger.ttsVolume, 0, 100)
-    return pcall(C_VoiceChat.SpeakText, self.voice.voiceID, text, rate, volume, true)
+    return false
 end
 
 function Effects:ShowGlow(item, settings)
@@ -52,6 +57,11 @@ function Effects:ShowGlow(item, settings)
     local entry = addon.Runtime and addon.Runtime.itemEntries[item]
     local display = entry and addon.Solo and addon.Solo.displays[entry.cooldownID]
     if display and display.isBar and style == "blizzard" then style = "pixel" end
+    local entrySettings = entry and addon:GetEntrySettings(entry.cooldownID, false)
+    if display and not display.isBar and entrySettings and entrySettings.soloCropEnabled == true
+        and style == "blizzard" then
+        style = "pixel"
+    end
     local target, isSolo = self:GetGlowTarget(item, style)
     if not target then return end
     -- Clear the alternate tracked-bar target so changing styles cannot leave

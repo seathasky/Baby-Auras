@@ -31,6 +31,52 @@ function GUI:OnSoloSizeChanged(value)
     self:SetStatus("Solo size saved automatically.")
 end
 
+function GUI:OnSoloCropClicked()
+    if self.refreshing or not self.selected or self.frame.ActiveTrackedBar then return end
+    local enabled = self.frame.SoloCrop:GetChecked() == true
+    local settings = addon:GetEntrySettings(self.selected.cooldownID, true)
+    settings.soloCropEnabled = enabled
+
+    for _, triggerSettings in pairs(settings.triggers or {}) do
+        if enabled then
+            if (triggerSettings.glowStyle or Defaults.trigger.glowStyle) == "blizzard" then
+                triggerSettings.soloCropPreviousGlowStyle = "blizzard"
+                triggerSettings.glowStyle = "pixel"
+            end
+        elseif triggerSettings.soloCropPreviousGlowStyle then
+            if triggerSettings.glowStyle == "pixel" then
+                triggerSettings.glowStyle = triggerSettings.soloCropPreviousGlowStyle
+            end
+            triggerSettings.soloCropPreviousGlowStyle = nil
+        end
+    end
+
+    local display = addon.Solo.displays[self.selected.cooldownID]
+    if display then addon.Solo:RefreshDisplay(display) end
+    local current = self.selectedTrigger
+        and addon:GetTriggerSettings(self.selected.cooldownID, self.selectedTrigger, false)
+    self.selectedGlowStyle = current and current.glowStyle or Defaults.trigger.glowStyle
+    self.frame.GlowStyle:GenerateMenu()
+    self:RefreshGlowTuningControls(current)
+    self:UpdateSoloControls()
+    self:UpdateGlowControls()
+    self:RefreshHeldTestGlow()
+    self:SetStatus(enabled and "Solo icon bottom crop enabled; Blizzard Proc glow is unavailable."
+        or "Solo icon crop disabled.")
+end
+
+function GUI:OnSoloCropChanged(value)
+    if not self.frame or not self.frame.SoloCropAmount then return end
+    local percent = Clamp(math.floor(((tonumber(value) or Defaults.soloAppearance.cropPercent) + 2.5) / 5) * 5, 0, 50)
+    self.frame.SoloCropValue:SetText(percent .. "%")
+    if self.refreshing or not self.selected or self.frame.ActiveTrackedBar then return end
+    local settings = addon:GetEntrySettings(self.selected.cooldownID, true)
+    settings.soloCropPercent = percent
+    local display = addon.Solo.displays[self.selected.cooldownID]
+    if display then addon.Solo:RefreshDisplay(display) end
+    self:SetStatus("Solo icon bottom crop saved automatically.")
+end
+
 function GUI:OnSoloBarDimensionChanged(settingKey, value, valueElement, label)
     local limits = settingKey == "soloBarWidth" and { 80, 400 }
         or settingKey == "soloBarHeight" and { 4, 80 }
@@ -231,6 +277,14 @@ function GUI:UpdateSoloControls()
     self.frame.SoloSizeValue:SetAlpha(available and 1 or 0.32)
     for _, control in ipairs(self.frame.SoloOptionControls or {}) do control:SetEnabled(available) end
     for _, element in ipairs(self.frame.SoloOptionElements or {}) do element:SetAlpha(available and 1 or 0.32) end
+    local cropAvailable = available and self.frame.ActiveTrackedBar ~= true
+    local cropAmountEnabled = cropAvailable and self.frame.SoloCrop:GetChecked() == true
+    self.frame.SoloCrop:SetEnabled(cropAvailable)
+    self.frame.SoloCrop:SetAlpha(cropAvailable and 1 or 0.32)
+    self.frame.SoloCropLabel:SetAlpha(cropAvailable and 1 or 0.32)
+    self.frame.SoloCropAmount:SetEnabled(cropAmountEnabled)
+    self.frame.SoloCropAmount:SetAlpha(cropAmountEnabled and 1 or 0.32)
+    self.frame.SoloCropValue:SetAlpha(cropAmountEnabled and 1 or 0.32)
     for _, control in ipairs(self.frame.SoloBarControls or {}) do control:SetEnabled(available) end
     local independentBarIcon = available and self.frame.ActiveTrackedBar == true
         and self.frame.SoloBarMatchIcon:GetChecked() ~= true

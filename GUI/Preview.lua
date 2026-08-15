@@ -7,7 +7,10 @@ local SetButtonTextWhite = addon.GUIWidgets.SetButtonTextWhite
 function GUI:UpdateTestAlertButton()
     if not self.frame or not self.frame.Test then return end
     self.frame.Test:SetText(self.previewMode and "Preview Mode: ON" or "Preview Mode: OFF")
-    self.frame.Test:SetButtonState(self.previewMode and "PUSHED" or "NORMAL", self.previewMode == true)
+    self.frame.Test:SetButtonState("NORMAL", false)
+    if self.frame.Test.ActiveBackground then
+        self.frame.Test.ActiveBackground:SetShown(self.previewMode == true)
+    end
     SetButtonTextWhite(self.frame.Test)
 end
 
@@ -29,7 +32,7 @@ function GUI:RefreshHeldTestGlow()
     if not self.selected then return end
     local item = addon.Runtime:GetLiveItem(self.selected.cooldownID)
     if not item then
-        if self.testGlowTarget then self:StopTestGlow(true) end
+        if self.testGlowTarget then self:ClearPreviewSelection() end
         return
     end
     if not self.frame.Glow:GetChecked() then
@@ -56,10 +59,30 @@ function GUI:RefreshHeldTestGlow()
     end
 end
 
-function GUI:StopTestGlow(silent)
-    local wasActive = self.previewMode == true or self.testGlowTarget ~= nil
+function GUI:ClearPreviewSelection()
     if self.testGlowTarget then addon.Effects:HideGlowTarget(self.testGlowTarget) end
     self.testGlowTarget = nil
+end
+
+function GUI:RefreshPreviewSelection()
+    if not self.previewMode or not self.selected then return end
+    self:ClearPreviewSelection()
+    addon.Solo:SetGUIPositionMode(true)
+    addon.Solo:SetIconsLocked(false)
+    local entrySettings = addon:GetEntrySettings(self.selected.cooldownID, false)
+    if entrySettings and entrySettings.solo == true then
+        addon.Solo:ToggleTextPreview(self.selected, true)
+    end
+    local item = addon.Runtime:GetLiveItem(self.selected.cooldownID)
+    if self.frame.Glow:GetChecked() and item then
+        self.testGlowTarget = addon.Effects:ShowGlow(item, self:GetCurrentTestGlowSettings())
+    end
+    self:UpdateTestAlertButton()
+end
+
+function GUI:StopTestGlow(silent)
+    local wasActive = self.previewMode == true or self.testGlowTarget ~= nil
+    self:ClearPreviewSelection()
     self.previewMode = false
     if self.selected then addon.Solo:ToggleTextPreview(self.selected, false) end
     if wasActive then

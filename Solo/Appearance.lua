@@ -8,6 +8,7 @@ local GetEntryAppearance = Utilities.GetEntryAppearance
 local GetTextColor = Utilities.GetTextColor
 local GetClassColor = Utilities.GetClassColor
 local GetPhysicalPixelSize = Utilities.GetPhysicalPixelSize
+local GetSoloBaseDimensions = Utilities.GetSoloBaseDimensions
 local IsSoloEnabled = Utilities.IsSoloEnabled
 local EDIT_SELECTION_COLOR = { r = 0.20, g = 1, b = 0.35 }
 
@@ -41,6 +42,16 @@ function Solo:ApplyAppearance(display)
     if not display or display.applyingAppearance then return end
     display.applyingAppearance = true
     local settings = GetEntryAppearance(display.entry)
+    if not display.isBar then
+        local cropPercent = settings.soloCropEnabled == true
+            and Clamp(tonumber(settings.soloCropPercent) or Defaults.soloAppearance.cropPercent, 0, 50) or 0
+        local cropFraction = cropPercent / 100
+        local baseWidth, baseHeight = GetSoloBaseDimensions(display.entry, nil, false)
+        display:SetSize(baseWidth, baseHeight * (1 - cropFraction))
+        local textureTop, textureBottom = 0.08, 0.92
+        display.Icon:SetTexCoord(0.08, 0.92, textureTop,
+            textureTop + ((textureBottom - textureTop) * (1 - cropFraction)))
+    end
     local opacity = Clamp(tonumber(settings.soloOpacity) or Defaults.soloAppearance.opacity, 0, 100) / 100
     display.Icon:SetAlpha(opacity)
     display.PixelBorder:SetAlpha(opacity)

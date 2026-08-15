@@ -34,7 +34,7 @@ end
 function GUI:ToggleIconLock()
     local locked = not addon.Solo:AreIconsLocked()
     if locked and self.previewMode then
-        self:StopTestGlow(false)
+        self:SetStatus("Turn off Preview Mode before locking Solo icons.")
         return
     end
     -- The options frame may already be visible when this is clicked (notably
@@ -111,14 +111,20 @@ function GUI:ScheduleAutoSave()
 end
 
 function GUI:Select(entry)
-    self:StopTestGlow(true)
+    local previewActive = self.previewMode == true
+    local editorScroll = self.frame and self.frame.EditorScroll
+    local scrollOffset = editorScroll and editorScroll:GetVerticalScroll() or 0
+    if previewActive then self:ClearPreviewSelection() else self:StopTestGlow(true) end
     self:CommitEditor()
     self.selected = entry
     self.selectedTrigger = self:GetAvailableTriggers(entry)[1]
-    if self.frame and self.frame.EditorScroll then self.frame.EditorScroll:SetVerticalScroll(0) end
     self:RefreshEditor()
+    if editorScroll then
+        editorScroll:SetVerticalScroll(Clamp(scrollOffset, 0, editorScroll:GetVerticalScrollRange()))
+    end
     addon.Navigation:Refresh(entry.cooldownID)
     addon.Solo:RefreshEditSelection()
+    if previewActive then self:RefreshPreviewSelection() end
 end
 
 function GUI:OpenEntry(entry)
@@ -146,17 +152,20 @@ function GUI:CycleTrigger()
         if trigger == self.selectedTrigger then nextIndex = index + 1 break end
     end
     if nextIndex > #triggers then nextIndex = 1 end
+    if self.previewMode then self:ClearPreviewSelection() end
     self.selectedTrigger = triggers[nextIndex]
     self:RefreshEditor()
+    if self.previewMode then self:RefreshPreviewSelection() end
 end
 
 function GUI:SelectTrigger(trigger)
     if not self.selected or trigger == self.selectedTrigger
         or not self.selected.validTriggers[trigger] then return end
     if not self:CommitEditor() then return end
-    self:StopTestGlow(true)
+    if self.previewMode then self:ClearPreviewSelection() end
     self.selectedTrigger = trigger
     self:RefreshEditor()
+    if self.previewMode then self:RefreshPreviewSelection() end
 end
 
 function GUI:OnPrismaticIconClicked()

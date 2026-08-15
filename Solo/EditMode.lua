@@ -12,13 +12,12 @@ function Solo:AreIconsLocked()
 end
 
 function Solo:SetIconsLocked(locked)
+    if locked and addon.GUI and addon.GUI.previewMode and not addon.GUI.stoppingPreviewMode then
+        return false
+    end
     BabyAurasDB.soloIconsLocked = locked == true
     if locked then self:SetLinkMode(false) end
     if locked then self.textPreviewEnabled = false end
-    if locked and addon.GUI and addon.GUI.previewMode and not addon.GUI.stoppingPreviewMode then
-        addon.GUI:StopTestGlow(true)
-        return
-    end
     -- Keep the runtime mode in sync with the visible GUI. This repairs stale
     -- sessions where the saved/button state says unlocked but no positioning
     -- mode was armed, leaving icons without outlines or mouse input.
@@ -41,6 +40,7 @@ function Solo:SetIconsLocked(locked)
     if addon.GUI then
         addon.GUI:UpdateIconLockButton()
     end
+    return true
 end
 
 function Solo:UpdateSnapButton()
@@ -104,7 +104,7 @@ function Solo:ResetPositionsToBar()
     local left = barX - (self.editBar:GetWidth() / 2) + 14
     local right = barX + (self.editBar:GetWidth() / 2) - 14
     local cursorX = left
-    local rowTop = barY - (self.editBar:GetHeight() / 2) - 14
+    local rowTop = barY - (self.editBar:GetHeight() * self.editBar:GetScale() / 2) - 14
     local rowHeight = 0
     for _, display in ipairs(ordered) do
         local width = display:GetWidth() * display:GetScale()
@@ -452,7 +452,9 @@ function Solo:CreateEditBar()
             return
         end
         if Solo.guiPositionMode then
-            Solo:SetIconsLocked(true)
+            if Solo:SetIconsLocked(true) == false and addon.GUI then
+                addon.GUI:SetStatus("Turn off Preview Mode before locking Solo icons.")
+            end
             return
         end
         Solo:SetEditMode(false, true)

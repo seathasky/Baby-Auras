@@ -196,7 +196,7 @@ Tutorial.steps = {
     },
     {
         title = "Preview everything",
-        text = "Preview Mode is the combined test toggle. Turning it ON unlocks Solo icons, shows each enabled stack, cooldown, and hotkey label, plays the configured TTS or audio once, and holds the selected glow for inspection. Changes to glow controls update live without replaying sound. Turn it OFF to clear the preview and lock the icons. Switching icons, triggers, or closing Baby Auras also turns it off.",
+        text = "Preview Mode is the combined test toggle. Turning it ON unlocks Solo icons, shows each enabled stack, cooldown, and hotkey label, plays the configured TTS or audio once, and holds the selected glow for inspection. Changes to glow controls update live without replaying sound. It stays on while you switch icons or triggers. Click Preview Mode again, or close Baby Auras, to clear the preview and lock the icons.",
         target = function() return addon.GUI.frame.Test end,
     },
     {

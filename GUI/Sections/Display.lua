@@ -62,6 +62,21 @@ function Display:Build(editor, frame)
     size:SetScript("OnValueChanged", function(_, value) GUI:OnSoloSizeChanged(value) end)
     frame.SoloSize, frame.SoloSizeLabel, frame.SoloSizeValue = size, sizeLabel, sizeValue
 
+    local crop, cropLabel = Widgets.CreateCheckbox(editor, "Crop icon from bottom", 155)
+    crop:SetPoint("TOPLEFT", size, "BOTTOMLEFT", -4, -17)
+    crop:SetScript("OnClick", function() GUI:OnSoloCropClicked() end)
+    frame.SoloCrop, frame.SoloCropLabel = crop, cropLabel
+    local cropAmount = CreateSlider(editor, 0, 50, 85)
+    cropAmount:SetPoint("TOPLEFT", crop, "TOPLEFT", 205, 2)
+    cropAmount:SetValueStep(5)
+    cropAmount:SetScript("OnValueChanged", function(_, value) GUI:OnSoloCropChanged(value) end)
+    frame.SoloCropAmount = cropAmount
+    local cropValue = editor:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
+    cropValue:SetPoint("LEFT", cropAmount, "RIGHT", 8, 0)
+    cropValue:SetText("50%")
+    cropValue:SetTextColor(0.42, 0.80, 1)
+    frame.SoloCropValue = cropValue
+
     local function CreateBarSlider(labelText, settingKey, minValue, maxValue, x, y)
         local label = editor:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
         label:SetText(labelText)
@@ -96,7 +111,7 @@ function Display:Build(editor, frame)
     frame.SoloBarControls = { bar.icon, bar.width, bar.height, bar.text, bar.match }
 
     local showSwipe, showSwipeLabel = Widgets.CreateCheckbox(editor, "Timer wheel", 105)
-    showSwipe:SetPoint("TOPLEFT", size, "BOTTOMLEFT", -4, -17)
+    showSwipe:SetPoint("TOPLEFT", crop, "BOTTOMLEFT", 0, -3)
     showSwipe:SetScript("OnClick", function(self)
         GUI:OnAppearanceClicked("soloShowSwipe", self, "Timer wheel preference")
     end)
@@ -260,6 +275,8 @@ function Display:Build(editor, frame)
     controls.panel, controls.solo, controls.soloLabel = panel, solo, soloLabel
     controls.onTop, controls.onTopLabel = onTop, onTopLabel
     controls.size, controls.sizeLabel, controls.sizeValue = size, sizeLabel, sizeValue
+    controls.crop, controls.cropLabel = crop, cropLabel
+    controls.cropAmount, controls.cropValue = cropAmount, cropValue
     controls.bar = bar
     controls.showSwipe, controls.showSwipeLabel = showSwipe, showSwipeLabel
     controls.showNumbers, controls.showNumbersLabel = showNumbers, showNumbersLabel
@@ -284,9 +301,10 @@ function Display:Build(editor, frame)
     controls.hotkeyYLabel, controls.hotkeyY = hotkeyYLabel, hotkeyY
     controls.descriptor = {
         key = "display", title = title, toggle = toggle, bottom = hotkeyPositionLabel,
-        gap = -17, collapseHeight = 410,
+        gap = -17, collapseHeight = 442,
         elements = {
             panel, solo, soloLabel, onTop, onTopLabel, size, sizeLabel, sizeValue,
+            crop, cropLabel, cropAmount, cropValue,
             bar.iconLabel, bar.icon, bar.iconValue, bar.widthLabel, bar.width, bar.widthValue,
             bar.heightLabel, bar.height, bar.heightValue, bar.textLabel, bar.text, bar.textValue,
             bar.match, bar.matchLabel, showSwipe, showSwipeLabel, showNumbers, showNumbersLabel,

@@ -19,6 +19,7 @@ end
 function Solo:GetDefaultPosition(entry, item)
     self:CreateEditBar()
     local barPosition = BabyAurasDB.editBarPosition or { x = 0, y = 0 }
+    local barHeight = self.editBar:GetHeight() * self.editBar:GetScale()
     local occupiedWidth = 0
     for cooldownID, display in pairs(self.displays) do
         if cooldownID ~= entry.cooldownID and IsSoloEnabled(display.entry) then
@@ -29,7 +30,7 @@ function Solo:GetDefaultPosition(entry, item)
     local width, height = GetSoloBaseDimensions(entry, item, isBar)
     local scale = self:GetScale(entry)
     local x = (barPosition.x or 0) - 270 + occupiedWidth + (width * scale / 2)
-    local y = (barPosition.y or 0) - 31 - 14 - (height * scale / 2)
+    local y = (barPosition.y or 0) - (barHeight / 2) - 14 - (height * scale / 2)
     return { x = x, y = y }
 end
 

@@ -310,6 +310,12 @@ function GUI:Create()
     frame.Test = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     frame.Test:SetPoint("LEFT", allSectionsButton, "RIGHT", 10, 0)
     frame.Test:SetSize(145, 24)
+    local previewActiveBackground = frame.Test:CreateTexture(nil, "BACKGROUND", nil, 7)
+    previewActiveBackground:SetPoint("TOPLEFT", 4, -4)
+    previewActiveBackground:SetPoint("BOTTOMRIGHT", -4, 4)
+    previewActiveBackground:SetColorTexture(0.035, 0.48, 0.12, 0.95)
+    previewActiveBackground:Hide()
+    frame.Test.ActiveBackground = previewActiveBackground
     frame.Test:SetScript("OnClick", function() GUI:TestEditor() end)
     self:UpdateTestAlertButton()
 
@@ -651,6 +657,8 @@ function GUI:Create()
     local soloPanel, solo, soloLabel = displaySection.panel, displaySection.solo, displaySection.soloLabel
     local soloOnTop, soloOnTopLabel = displaySection.onTop, displaySection.onTopLabel
     local soloSize, soloSizeLabel, soloSizeValue = displaySection.size, displaySection.sizeLabel, displaySection.sizeValue
+    local soloCrop, soloCropLabel = displaySection.crop, displaySection.cropLabel
+    local soloCropAmount, soloCropValue = displaySection.cropAmount, displaySection.cropValue
     local soloBar = displaySection.bar
     local soloShowSwipe, soloShowSwipeLabel = displaySection.showSwipe, displaySection.showSwipeLabel
     local soloShowNumbers, soloShowNumbersLabel = displaySection.showNumbers, displaySection.showNumbersLabel
@@ -734,7 +742,7 @@ function GUI:Create()
 
     -- Controls and labels disabled when the selected trigger is unavailable.
     frame.TriggerGateControls = {
-        solo, soloOnTop, soloSize, soloBar.icon, soloBar.width, soloBar.height, soloBar.text, soloBar.match,
+        solo, soloOnTop, soloSize, soloCrop, soloCropAmount, soloBar.icon, soloBar.width, soloBar.height, soloBar.text, soloBar.match,
         soloShowSwipe, soloShowNumbers, soloKeepColored, soloClassSwipe, soloActiveBorder,
         soloAlwaysShow, soloDesaturateInactive, soloShowStacks, soloOpacity, soloStackSize, soloCooldownSize,
         stackX, stackY, cooldownX, cooldownY, soloHotkey, soloHotkeySize, hotkeyX, hotkeyY,
@@ -747,6 +755,7 @@ function GUI:Create()
     }
     frame.TriggerGateElements = {
         displayTitle, displayLine, soloPanel, solo, soloLabel, soloOnTop, soloOnTopLabel, soloSize, soloSizeLabel, soloSizeValue,
+        soloCrop, soloCropLabel, soloCropAmount, soloCropValue,
         soloBar.iconLabel, soloBar.icon, soloBar.iconValue,
         soloBar.widthLabel, soloBar.width, soloBar.widthValue,
         soloBar.heightLabel, soloBar.height, soloBar.heightValue,
@@ -784,7 +793,7 @@ function GUI:Create()
 
     -- Controls and labels whose availability depends on Solo-icon support.
     frame.SoloOptionControls = {
-        soloOnTop, soloSize, soloBar.icon, soloBar.width, soloBar.height, soloBar.text, soloBar.match,
+        soloOnTop, soloSize, soloCrop, soloCropAmount, soloBar.icon, soloBar.width, soloBar.height, soloBar.text, soloBar.match,
         soloShowSwipe, soloShowNumbers, soloKeepColored, soloClassSwipe,
         soloActiveBorder, soloAlwaysShow, soloDesaturateInactive, soloShowStacks,
         soloOpacity, soloStackSize, soloCooldownSize, stackX, stackY, cooldownX, cooldownY,
@@ -795,6 +804,7 @@ function GUI:Create()
     }
     frame.SoloOptionElements = {
         soloOnTop, soloOnTopLabel, soloSize, soloSizeLabel, soloSizeValue,
+        soloCrop, soloCropLabel, soloCropAmount, soloCropValue,
         soloBar.iconLabel, soloBar.icon, soloBar.iconValue,
         soloBar.widthLabel, soloBar.width, soloBar.widthValue,
         soloBar.heightLabel, soloBar.height, soloBar.heightValue,
@@ -824,6 +834,7 @@ function GUI:Create()
     }
     frame.SoloEligibilityElements = {
         soloPanel, soloOnTop, soloOnTopLabel, soloSize, soloSizeLabel, soloSizeValue,
+        soloCrop, soloCropLabel, soloCropAmount, soloCropValue,
         soloBar.iconLabel, soloBar.icon, soloBar.iconValue,
         soloBar.widthLabel, soloBar.width, soloBar.widthValue,
         soloBar.heightLabel, soloBar.height, soloBar.heightValue,

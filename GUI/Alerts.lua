@@ -66,12 +66,19 @@ end
 
 function GUI:SetGlowStyle(style)
     if not self.selected or not self.selectedTrigger then return end
+    local cropEnabled = self.frame and self.frame.SoloCrop
+        and self.frame.SoloCrop:GetChecked() == true and not self.frame.ActiveTrackedBar
+    if cropEnabled and style == "blizzard" then
+        self:SetStatus("Blizzard Proc glow is unavailable while Solo icon cropping is enabled.")
+        return
+    end
     self.selectedGlowStyle = style or Defaults.trigger.glowStyle
     if self.frame and self.frame.ActiveTrackedBar and self.selectedGlowStyle == "blizzard" then
         self.selectedGlowStyle = "pixel"
     end
     local settings = addon:GetTriggerSettings(self.selected.cooldownID, self.selectedTrigger, true)
     settings.glowStyle = self.selectedGlowStyle
+    if cropEnabled then settings.soloCropPreviousGlowStyle = nil end
     if self.frame and self.frame.GlowStyle then self.frame.GlowStyle:GenerateMenu() end
     self:RefreshGlowTuningControls(settings)
     self:UpdateGlowControls()
@@ -131,7 +138,8 @@ function GUI:ResetAlertEffects()
         OnAccept = function(_, data)
             local settings = addon:GetTriggerSettings(data.cooldownID, data.trigger, true)
             settings.glow = false
-            settings.glowStyle = data.isTrackedBar and "pixel" or Defaults.trigger.glowStyle
+            settings.glowStyle = (data.isTrackedBar or data.isCropped) and "pixel" or Defaults.trigger.glowStyle
+            settings.soloCropPreviousGlowStyle = data.isCropped and Defaults.trigger.glowStyle or nil
             settings.glowDuration = Defaults.trigger.glowDuration
             settings.glowCount = Defaults.trigger.glowCount
             settings.glowSpeed = Defaults.trigger.glowSpeed
@@ -164,5 +172,7 @@ function GUI:ResetAlertEffects()
         cooldownID = self.selected.cooldownID,
         trigger = self.selectedTrigger,
         isTrackedBar = self.frame.ActiveTrackedBar == true,
+        isCropped = self.frame.ActiveTrackedBar ~= true and self.frame.SoloCrop
+            and self.frame.SoloCrop:GetChecked() == true,
     })
 end

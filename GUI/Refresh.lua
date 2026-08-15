@@ -137,9 +137,21 @@ function GUI:RefreshEditor(message)
     local isTrackedBar = liveItem and addon.Solo:IsTrackedBarItem(liveItem) or false
     frame.ActiveTrackedBar = isTrackedBar
     frame.SoloSizeLabel:SetText(isTrackedBar and "Global size" or "Icon size")
+    local showCrop = soloEligible and not isTrackedBar
+    frame.SoloCrop:SetShown(showCrop)
+    frame.SoloCropLabel:SetShown(showCrop)
+    frame.SoloCropAmount:SetShown(showCrop)
+    frame.SoloCropValue:SetShown(showCrop)
+    frame.SoloCrop:SetChecked(entrySettings and entrySettings.soloCropEnabled == true)
+    frame.SoloCropAmount:SetValue(entrySettings and entrySettings.soloCropPercent
+        or Defaults.soloAppearance.cropPercent)
     for _, element in ipairs(frame.SoloBarElements or {}) do element:SetShown(isTrackedBar) end
     frame.SoloShowSwipe:ClearAllPoints()
-    frame.SoloShowSwipe:SetPoint("TOPLEFT", frame.SoloSize, "BOTTOMLEFT", -4, isTrackedBar and -147 or -17)
+    if isTrackedBar then
+        frame.SoloShowSwipe:SetPoint("TOPLEFT", frame.SoloSize, "BOTTOMLEFT", -4, -147)
+    else
+        frame.SoloShowSwipe:SetPoint("TOPLEFT", frame.SoloCrop, "BOTTOMLEFT", 0, -3)
+    end
     if isTrackedBar then
         local sourceHeight = liveItem:GetHeight()
         local sourceWidth = liveItem:GetWidth()
@@ -249,7 +261,9 @@ function GUI:RefreshEditor(message)
     frame.Enabled:SetChecked(settings and settings.enabled or false)
     frame.Glow:SetChecked(settings and settings.glow or false)
     self.selectedGlowStyle = settings and settings.glowStyle or Defaults.trigger.glowStyle
-    if isTrackedBar and self.selectedGlowStyle == "blizzard" then
+    local cropEnabled = not isTrackedBar and entrySettings and entrySettings.soloCropEnabled == true
+    if (isTrackedBar or cropEnabled) and self.selectedGlowStyle == "blizzard" then
+        if cropEnabled and settings then settings.soloCropPreviousGlowStyle = "blizzard" end
         self.selectedGlowStyle = "pixel"
         if settings then settings.glowStyle = "pixel" end
     end

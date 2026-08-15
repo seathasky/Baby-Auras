@@ -31,10 +31,13 @@ function Alerts:Build(editor, anchor, frame)
             end, function(value)
                 GUI:SetGlowStyle(value)
             end, optionData.key)
-            if optionData.key == "blizzard" and GUI.frame.ActiveTrackedBar then
+            local cropEnabled = not GUI.frame.ActiveTrackedBar and GUI.frame.SoloCrop
+                and GUI.frame.SoloCrop:GetChecked() == true
+            if optionData.key == "blizzard" and (GUI.frame.ActiveTrackedBar or cropEnabled) then
                 option:SetEnabled(false)
                 option:SetTitleAndTextTooltip("Blizzard Proc unavailable",
-                    "Tracked bars support Pixel Glow and Extended Glow. Other icon categories can use Blizzard Proc.")
+                    cropEnabled and "Cropped Solo icons support Pixel Glow and Extended Glow."
+                        or "Tracked bars support Pixel Glow and Extended Glow. Other icon categories can use Blizzard Proc.")
             end
         end
     end)
