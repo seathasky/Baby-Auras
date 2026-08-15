@@ -49,8 +49,8 @@ function Solo:UpdateSnapButton()
     local enabled = BabyAurasDB.snapEnabled ~= false
     button:SetText(enabled and "Snapping: ON" or "Snapping: OFF")
     button:GetFontString():SetTextColor(1, 1, 1)
-    button:SetBackdropColor(enabled and 0.04 or 0.12, enabled and 0.28 or 0.08, enabled and 0.42 or 0.1, 1)
-    button:SetBackdropBorderColor(enabled and 0.25 or 0.55, enabled and 1 or 0.3, enabled and 0.7 or 0.3, 1)
+    button:SetBackdropColor(0.06, 0.16, 0.25, 1)
+    button:SetBackdropBorderColor(137 / 255, 147 / 255, 210 / 255, 1)
     if self.snapSpacing then
         self.snapSpacing:SetEnabled(enabled)
         self.snapSpacingLabel:SetTextColor(enabled and 1 or 0.45, enabled and 1 or 0.45, enabled and 1 or 0.45)
@@ -71,7 +71,7 @@ function Solo:UpdateTooltipButton()
     local hidden = BabyAurasDB.hideSoloTooltips == true
     button:SetText(hidden and "Show TT" or "Hide TT")
     button:GetFontString():SetTextColor(1, 1, 1)
-    button:SetBackdropColor(hidden and 0.20 or 0.06, hidden and 0.08 or 0.16, hidden and 0.10 or 0.25, 1)
+    button:SetBackdropColor(0.06, 0.16, 0.25, 1)
 end
 
 function Solo:UpdateLabelButton()
@@ -80,7 +80,7 @@ function Solo:UpdateLabelButton()
     local hidden = BabyAurasDB.hideSoloLabels == true
     button:SetText(hidden and "Show B" or "Hide B")
     button:GetFontString():SetTextColor(1, 1, 1)
-    button:SetBackdropColor(hidden and 0.20 or 0.06, hidden and 0.08 or 0.16, hidden and 0.10 or 0.25, 1)
+    button:SetBackdropColor(0.06, 0.16, 0.25, 1)
 end
 
 function Solo:ResetPositionsToBar()
@@ -177,22 +177,30 @@ function Solo:CreateEditBar()
         self:SetFrameLevel(500)
     end)
     bar:SetBackdrop({
-        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        bgFile = "Interface\\Buttons\\WHITE8X8",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         edgeSize = 14,
     })
-    bar:SetBackdropColor(0.025, 0.045, 0.1, 0.97)
+    bar:SetBackdropColor(0.105, 0.105, 0.125, 1)
     bar:SetBackdropBorderColor(137 / 255, 147 / 255, 210 / 255, 1)
 
+    local headerBackgroundArt = bar:CreateTexture(nil, "BACKGROUND", nil, 1)
+    headerBackgroundArt:SetPoint("TOPLEFT")
+    headerBackgroundArt:SetPoint("TOPRIGHT")
+    headerBackgroundArt:SetHeight(44)
+    headerBackgroundArt:SetTexture("Interface\\AddOns\\BabyAuras\\Media\\Images\\bg.png")
+    headerBackgroundArt:SetTexCoord(0, 1, 0.34, 0.44)
+    headerBackgroundArt:SetAlpha(0.18)
+
     local logo = bar:CreateTexture(nil, "ARTWORK")
-    logo:SetSize(28, 28)
+    logo:SetSize(36, 40)
     logo:SetPoint("TOPLEFT", 9, -7)
-    logo:SetTexture("Interface\\AddOns\\BabyAuras\\Media\\Images\\ba.png")
+    logo:SetTexture("Interface\\AddOns\\BabyAuras\\Media\\Images\\BALogoTIconCentered.png")
 
     local title = bar:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
-    title:SetPoint("LEFT", logo, "RIGHT", 8, 0)
+    title:SetPoint("LEFT", logo, "RIGHT", 8, 8)
     title:SetText("BABY AURAS EDIT MODE")
-    title:SetTextColor(0.52, 0.82, 1)
+    title:SetTextColor(166/255, 172/255, 248/255, 252/255)
     local subtitle = bar:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     subtitle:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -2)
     subtitle:SetText("Arrange and align your Solo icons")
@@ -212,8 +220,8 @@ function Solo:CreateEditBar()
             edgeFile = "Interface\\Buttons\\WHITE8X8",
             edgeSize = 1,
         })
-        panel:SetBackdropColor(0.025, 0.055, 0.085, 0.88)
-        panel:SetBackdropBorderColor(0.16, 0.38, 0.55, 0.9)
+        panel:SetBackdropColor(0.025, 0.025, 0.035, 1)
+        panel:SetBackdropBorderColor(0.16, 0.38, 0.55, 0.5)
         return panel
     end
 
@@ -229,17 +237,17 @@ function Solo:CreateEditBar()
     local movementHeader = movementPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     movementHeader:SetPoint("LEFT", 10, 0)
     movementHeader:SetText("MOVEMENT")
-    movementHeader:SetTextColor(0.42, 0.82, 1)
+    movementHeader:SetTextColor(166/255, 172/255, 248/255, 252/255)
 
     local visibilityHeader = visibilityPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     visibilityHeader:SetPoint("LEFT", 10, 0)
     visibilityHeader:SetText("VISIBILITY")
-    visibilityHeader:SetTextColor(0.42, 0.82, 1)
+    visibilityHeader:SetTextColor(166/255, 172/255, 248/255, 252/255)
 
     local actionsHeader = actionsPanel:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     actionsHeader:SetPoint("TOP", 0, -7)
     actionsHeader:SetText("ACTIONS")
-    actionsHeader:SetTextColor(0.42, 0.82, 1)
+    actionsHeader:SetTextColor(166/255, 172/255, 248/255, 252/255)
 
     local linkButton = CreateFrame("Button", nil, bar, "BackdropTemplate")
     linkButton:SetFrameLevel(bar:GetFrameLevel() + 10)
@@ -252,6 +260,8 @@ function Solo:CreateEditBar()
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         edgeSize = 10,
     })
+    linkButton:SetBackdropColor(0.06, 0.16, 0.25, 1)
+    linkButton:SetBackdropBorderColor(137 / 255, 147 / 255, 210 / 255, 1)
     local linkText = linkButton:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     linkText:SetPoint("CENTER")
     linkButton:SetFontString(linkText)
@@ -271,6 +281,8 @@ function Solo:CreateEditBar()
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         edgeSize = 10,
     })
+    snapButton:SetBackdropColor(0.06, 0.16, 0.25, 1)
+    snapButton:SetBackdropBorderColor(137 / 255, 147 / 255, 210 / 255, 1)
     local snapText = snapButton:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     snapText:SetPoint("CENTER")
     snapButton:SetFontString(snapText)
@@ -319,15 +331,15 @@ function Solo:CreateEditBar()
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         edgeSize = 10,
     })
-    reset:SetBackdropColor(0.13, 0.1, 0.22, 1)
+    reset:SetBackdropColor(0.06, 0.16, 0.25, 1)
     reset:SetBackdropBorderColor(137 / 255, 147 / 255, 210 / 255, 1)
     local resetText = reset:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     resetText:SetPoint("CENTER")
     reset:SetFontString(resetText)
     reset:SetText("Reset Positions")
     resetText:SetTextColor(1, 1, 1)
-    reset:SetScript("OnEnter", function(self) self:SetBackdropColor(0.23, 0.16, 0.38, 1) end)
-    reset:SetScript("OnLeave", function(self) self:SetBackdropColor(0.13, 0.1, 0.22, 1) end)
+    reset:SetScript("OnEnter", function(self) self:SetBackdropColor(0.10, 0.28, 0.42, 1) end)
+    reset:SetScript("OnLeave", function(self) self:SetBackdropColor(0.06, 0.16, 0.25, 1) end)
     reset:SetScript("OnClick", function() Solo:ConfirmResetPositions() end)
 
     local hideGUI = CreateFrame("Button", nil, bar, "BackdropTemplate")
@@ -348,7 +360,7 @@ function Solo:CreateEditBar()
     hideGUI:SetFontString(hideGUIText)
     hideGUI:SetText("Hide GUI")
     hideGUIText:SetTextColor(1, 1, 1)
-    hideGUI:SetScript("OnEnter", function(self) self:SetBackdropColor(0.1, 0.28, 0.42, 1) end)
+    hideGUI:SetScript("OnEnter", function(self) self:SetBackdropColor(0.10, 0.28, 0.42, 1) end)
     hideGUI:SetScript("OnLeave", function(self) self:SetBackdropColor(0.06, 0.16, 0.25, 1) end)
     hideGUI:SetScript("OnClick", function()
         if not addon.GUI or not addon.GUI.frame then return end
@@ -372,6 +384,7 @@ function Solo:CreateEditBar()
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         edgeSize = 10,
     })
+    hideLabels:SetBackdropColor(0.06, 0.16, 0.25, 1)
     hideLabels:SetBackdropBorderColor(137 / 255, 147 / 255, 210 / 255, 1)
     local hideLabelsText = hideLabels:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     hideLabelsText:SetPoint("CENTER")
@@ -395,6 +408,7 @@ function Solo:CreateEditBar()
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         edgeSize = 10,
     })
+    hideTooltips:SetBackdropColor(0.06, 0.16, 0.25, 1)
     hideTooltips:SetBackdropBorderColor(137 / 255, 147 / 255, 210 / 255, 1)
     local hideTooltipsText = hideTooltips:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     hideTooltipsText:SetPoint("CENTER")
@@ -418,15 +432,15 @@ function Solo:CreateEditBar()
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
         edgeSize = 10,
     })
-    done:SetBackdropColor(0.08, 0.14, 0.3, 1)
+    done:SetBackdropColor(0.06, 0.16, 0.25, 1)
     done:SetBackdropBorderColor(137 / 255, 147 / 255, 210 / 255, 1)
     local doneText = done:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     doneText:SetPoint("CENTER")
     done:SetFontString(doneText)
     done:SetText("Return")
     doneText:SetTextColor(1, 1, 1)
-    done:SetScript("OnEnter", function(self) self:SetBackdropColor(0.14, 0.24, 0.5, 1) end)
-    done:SetScript("OnLeave", function(self) self:SetBackdropColor(0.08, 0.14, 0.3, 1) end)
+    done:SetScript("OnEnter", function(self) self:SetBackdropColor(0.10, 0.28, 0.42, 1) end)
+    done:SetScript("OnLeave", function(self) self:SetBackdropColor(0.06, 0.16, 0.25, 1) end)
     done:SetScript("OnClick", function()
         local manager = _G.EditModeManagerFrame
         if Solo.combinedEditMode and manager and manager:IsShown() then
