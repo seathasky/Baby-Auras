@@ -104,10 +104,11 @@ local function ReadNativeState(entry)
     end
 
     local maxCharges = chargeInfo and chargeInfo.maxCharges
-    local hasCharges = chargeInfo and maxCharges > 1
+    local hasCharges = chargeInfo and IsAccessible(maxCharges)
+        and type(maxCharges) == "number" and maxCharges > 1
     if hasCharges then
         local chargeIsActive = chargeInfo.isActive
-        local chargeRecharging = chargeIsActive == true
+        local chargeRecharging = IsAccessible(chargeIsActive) and chargeIsActive == true
         local currentCharges = chargeInfo.currentCharges
         if not IsAccessible(currentCharges) or type(currentCharges) ~= "number" then
             -- currentCharges can be protected in combat. Use cooldown flags
@@ -116,8 +117,10 @@ local function ReadNativeState(entry)
                 local cooldownOK, cooldown = pcall(C_Spell.GetSpellCooldown, spellID)
                 if cooldownOK and cooldown then
                     local isActive, isOnGCD = cooldown.isActive, cooldown.isOnGCD
-                    return isActive == true and isOnGCD ~= true,
-                        spellID, nil, maxCharges, chargeRecharging
+                    if IsAccessible(isActive) and IsAccessible(isOnGCD) then
+                        return isActive == true and isOnGCD ~= true,
+                            spellID, nil, maxCharges, chargeRecharging
+                    end
                 end
             end
             return nil, spellID, nil, maxCharges, chargeRecharging
@@ -133,6 +136,9 @@ local function ReadNativeState(entry)
     if not ok then return nil end
     if not cooldown then return false, spellID, nil, nil end
     local isActive, isOnGCD = cooldown.isActive, cooldown.isOnGCD
+    -- isActive/isOnGCD can be secret in combat; comparing them unguarded
+    -- throws and aborts the whole trigger scan.
+    if not IsAccessible(isActive) or not IsAccessible(isOnGCD) then return nil end
     return isActive == true and isOnGCD ~= true, spellID, nil, nil
 end
 
@@ -161,7 +167,7 @@ local function GetSpellReadyAlpha(spellID)
 
     if C_Spell.GetSpellCooldown then
         local cooldownOK, cooldown = pcall(C_Spell.GetSpellCooldown, spellID)
-        if cooldownOK and cooldown and cooldown.isOnGCD == true then
+        if cooldownOK and cooldown and IsAccessible(cooldown.isOnGCD) and cooldown.isOnGCD == true then
             alpha = 1
         end
     end
@@ -240,15 +246,18 @@ function Monitor:HandlePlayerSpellcast(castSpellID)
             seen[cooldownID] = true
             local enabled, settings = IsTriggerEnabled(entry, AlertType.OnCooldown)
             if enabled then
+                local matchedEntry, matchedSettings = entry, settings
                 -- Let SPELL_UPDATE_COOLDOWN/CHARGES settle, then require a real
                 -- cooldown or recharge. The Fire dedupe merges this with sampled
                 -- and native Started signals from the same cast.
                 local function ConfirmStarted()
-                    local onCooldown, _, _, maxCharges, chargeRecharging = ReadNativeState(entry)
+                    local onCooldown, _, _, maxCharges, chargeRecharging = ReadNativeState(matchedEntry)
                     local isChargeSpell = type(maxCharges) == "number" and maxCharges > 1
                     local started = isChargeSpell and chargeRecharging == true
                         or not isChargeSpell and onCooldown == true
-                    if started then Monitor:Fire(entry, AlertType.OnCooldown, settings) end
+                    if started then
+                        Monitor:Fire(matchedEntry, AlertType.OnCooldown, matchedSettings)
+                    end
                 end
                 C_Timer.After(0, ConfirmStarted)
                 C_Timer.After(0.05, ConfirmStarted)
@@ -326,6 +335,7 @@ function Monitor:Evaluate(primeOnly)
                         else
                             startedEdge = state.onCooldown == false and onCooldown == true
                         end
+                        if startedEdge then addon.Effects:HideGlow(item) end
                         if startedEnabled and not suppressed and startedEdge then
                             self:Fire(entry, AlertType.OnCooldown, startedSettings)
                         end
@@ -343,6 +353,9 @@ function Monitor:Evaluate(primeOnly)
                                 state.readySamples = 0
                             end
                             if state.readySamples >= READY_SAMPLES_REQUIRED then
+                                -- End any held On Cooldown/Charge glow even if the
+                                -- Ready trigger itself is disabled or sound-only.
+                                addon.Effects:HideGlow(item)
                                 if readyEnabled and not suppressed
                                     and GetActiveManagedCooldownIDs()[cooldownID]
                                     and self:GetLiveItem(entry) ~= nil then

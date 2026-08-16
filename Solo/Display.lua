@@ -90,7 +90,12 @@ function Solo:CreateDisplay(entry, item)
     else
         cooldown:SetAllPoints()
     end
-    cooldown:SetReverse(true)
+    -- Match Blizzard/CMC's normal cooldown direction. Aura-specific updates may
+    -- override this later, but spell cooldowns must not inherit a reversed swipe.
+    cooldown:SetReverse(false)
+    cooldown:SetDrawEdge(false)
+    cooldown:SetDrawBling(false)
+    cooldown:SetHideCountdownNumbers(false)
     cooldown:SetUseAuraDisplayTime(true)
     display.Cooldown = cooldown
 

@@ -13,6 +13,7 @@ local Defaults = {
         soloIconsLocked = true,
         nextSoloLinkGroupID = 1,
         tutorialRainbowSeen = false,
+        alertMotionVersion = 2,
         editorCollapsedSections = {
             display = true,
             theme = true,
@@ -36,9 +37,12 @@ local Defaults = {
         audioEnabled = false,
         audioSound = nil,
         audioChannel = "Master",
+        zoom = false,
+        bounce = false,
+        bounceDuration = 0,
         glow = false,
         glowStyle = "blizzard",
-        glowDuration = 2,
+        glowDuration = 0,
         glowCount = nil,
         glowSpeed = 4,
         glowThickness = 2,
@@ -105,6 +109,7 @@ end
 
 function Defaults:InitializeDatabase(database)
     database = type(database) == "table" and database or {}
+    local migrateOldBounceToZoom = database.alertMotionVersion ~= 2
     ApplyMissing(database, self.database)
     database.editorCollapsedSections = type(database.editorCollapsedSections) == "table"
         and database.editorCollapsedSections or Copy(self.database.editorCollapsedSections)
@@ -125,6 +130,10 @@ function Defaults:InitializeDatabase(database)
                 entry.editorCollapsedSections = nil
                 for _, trigger in pairs(entry.triggers or {}) do
                     if type(trigger) == "table" then
+                        if migrateOldBounceToZoom and trigger.zoom == nil and trigger.bounce ~= nil then
+                            trigger.zoom = trigger.bounce == true
+                            trigger.bounce = nil
+                        end
                         trigger.triggerOnStacks = nil
                         trigger.triggerStackCount = nil
                     end
@@ -146,5 +155,6 @@ function Defaults:InitializeDatabase(database)
     -- unlocked editor state.
     database.soloIconsLocked = true
     database.tutorialRainbowSeen = database.tutorialRainbowSeen == true
+    database.alertMotionVersion = 2
     return database
 end

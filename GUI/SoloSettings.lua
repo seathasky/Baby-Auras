@@ -18,6 +18,7 @@ function GUI:OnSoloClicked()
         return
     end
     self:UpdateSoloControls()
+    self:UpdateGlowControls()
     addon.Navigation:Refresh(self.selected.cooldownID)
     self:SetStatus(enabled and "Solo display enabled. Use Edit Mode to position it." or "Solo display disabled.")
 end

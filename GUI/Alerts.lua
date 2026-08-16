@@ -10,6 +10,19 @@ function GUI:UpdateGlowControls()
     local glowEnabled = enabled and self.frame.Glow:GetChecked() == true
     local style = self:GetGlowStyle()
     local colorEnabled = glowEnabled and (style == "pixel" or style == "extended")
+    local motionEnabled = enabled and self.frame.ActiveTrackedBar ~= true
+    local bounceEnabled = motionEnabled
+    local bounceDurationEnabled = bounceEnabled and self.frame.Bounce:GetChecked() == true
+    self.frame.Zoom:SetEnabled(motionEnabled)
+    self.frame.Zoom:SetAlpha(motionEnabled and 1 or 0.32)
+    self.frame.ZoomLabel:SetAlpha(motionEnabled and 1 or 0.32)
+    self.frame.Bounce:SetEnabled(bounceEnabled)
+    self.frame.Bounce:SetAlpha(bounceEnabled and 1 or 0.32)
+    self.frame.BounceLabel:SetAlpha(bounceEnabled and 1 or 0.32)
+    self.frame.BounceDuration:SetEnabled(bounceDurationEnabled)
+    self.frame.BounceDuration:SetAlpha(bounceDurationEnabled and 1 or 0.32)
+    self.frame.BounceDurationLabel:SetAlpha(bounceDurationEnabled and 1 or 0.32)
+    self.frame.BounceDurationHint:SetAlpha(bounceDurationEnabled and 1 or 0.32)
     self.frame.GlowStyle:SetEnabled(glowEnabled)
     self.frame.Duration:SetEnabled(glowEnabled)
     self.frame.GlowColor:SetEnabled(colorEnabled)
@@ -132,11 +145,14 @@ end
 function GUI:ResetAlertEffects()
     if not self.selected or not self.selectedTrigger then return end
     StaticPopupDialogs.BABY_AURAS_RESET_ALERT_EFFECTS = {
-        text = "|cFFFF3030ARE YOU SURE?|r\n\nReset Alert Effects for %s?\n\nThis turns Glow alert OFF and restores its style, duration, color, and tuning defaults.",
+        text = "|cFFFF3030ARE YOU SURE?|r\n\nReset Alert Effects for %s?\n\nThis turns Glow, Zoom, and Bounce OFF and restores their duration, color, and tuning defaults.",
         button1 = "Reset Alert Effects",
         button2 = CANCEL,
         OnAccept = function(_, data)
             local settings = addon:GetTriggerSettings(data.cooldownID, data.trigger, true)
+            settings.zoom = false
+            settings.bounce = false
+            settings.bounceDuration = Defaults.trigger.bounceDuration
             settings.glow = false
             settings.glowStyle = (data.isTrackedBar or data.isCropped) and "pixel" or Defaults.trigger.glowStyle
             settings.soloCropPreviousGlowStyle = data.isCropped and Defaults.trigger.glowStyle or nil
@@ -175,4 +191,33 @@ function GUI:ResetAlertEffects()
         isCropped = self.frame.ActiveTrackedBar ~= true and self.frame.SoloCrop
             and self.frame.SoloCrop:GetChecked() == true,
     })
+end
+
+function GUI:OnZoomClicked()
+    if self.refreshing then return end
+    self:CommitEditor()
+    if self.selected then
+        local item = addon.Runtime:GetLiveItem(self.selected.cooldownID)
+        if item and self.frame.Zoom:GetChecked() == true then
+            addon.Effects:PlayZoom(item)
+            if self.previewMode then self.previewMotionItem = item end
+        elseif item then
+            addon.Effects:StopZoom(item)
+        end
+    end
+end
+
+function GUI:OnBounceClicked()
+    if self.refreshing then return end
+    self:UpdateGlowControls()
+    self:CommitEditor()
+    if self.selected then
+        local item = addon.Runtime:GetLiveItem(self.selected.cooldownID)
+        if item and self.frame.Bounce:GetChecked() == true then
+            addon.Effects:PlayBounce(item, tonumber(self.frame.BounceDuration:GetText()))
+            if self.previewMode then self.previewMotionItem = item end
+        elseif item then
+            addon.Effects:StopBounce(item)
+        end
+    end
 end

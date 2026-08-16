@@ -62,6 +62,11 @@ end
 function GUI:ClearPreviewSelection()
     if self.testGlowTarget then addon.Effects:HideGlowTarget(self.testGlowTarget) end
     self.testGlowTarget = nil
+    if self.previewMotionItem then
+        addon.Effects:StopZoom(self.previewMotionItem)
+        addon.Effects:StopBounce(self.previewMotionItem)
+    end
+    self.previewMotionItem = nil
 end
 
 function GUI:RefreshPreviewSelection()
@@ -76,6 +81,13 @@ function GUI:RefreshPreviewSelection()
     local item = addon.Runtime:GetLiveItem(self.selected.cooldownID)
     if self.frame.Glow:GetChecked() and item then
         self.testGlowTarget = addon.Effects:ShowGlow(item, self:GetCurrentTestGlowSettings())
+    end
+    if self.frame.Zoom:GetChecked() and item then addon.Effects:PlayZoom(item) end
+    if self.frame.Bounce:GetChecked() and item then
+        addon.Effects:PlayBounce(item, tonumber(self.frame.BounceDuration:GetText()))
+    end
+    if item and (self.frame.Zoom:GetChecked() or self.frame.Bounce:GetChecked()) then
+        self.previewMotionItem = item
     end
     self:UpdateTestAlertButton()
 end
@@ -124,7 +136,14 @@ function GUI:TestEditor()
     if self.frame.Glow:GetChecked() and item then
         self.testGlowTarget = addon.Effects:ShowGlow(item, self:GetCurrentTestGlowSettings())
     end
+    if self.frame.Zoom:GetChecked() and item then addon.Effects:PlayZoom(item) end
+    if self.frame.Bounce:GetChecked() and item then
+        addon.Effects:PlayBounce(item, tonumber(self.frame.BounceDuration:GetText()))
+    end
+    if item and (self.frame.Zoom:GetChecked() or self.frame.Bounce:GetChecked()) then
+        self.previewMotionItem = item
+    end
     self:UpdateTestAlertButton()
-    self:SetStatus(soundDescription .. "; Preview Mode ON - enabled text and glow are held for inspection.")
+    self:SetStatus(soundDescription .. "; Preview Mode ON - enabled visual effects are shown for inspection.")
 end
 

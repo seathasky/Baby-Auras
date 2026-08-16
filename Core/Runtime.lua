@@ -49,6 +49,26 @@ function Runtime:RefreshItem(item)
     self:ApplyCustomIcon(item)
 end
 
+function Runtime:QueueItemRefresh(item, syncOnly)
+    if not item then return end
+    self.pendingItemRefreshes = self.pendingItemRefreshes or setmetatable({}, { __mode = "k" })
+    local pending = self.pendingItemRefreshes[item]
+    if pending then
+        if not syncOnly then pending.full = true end
+        return
+    end
+    pending = { full = not syncOnly }
+    self.pendingItemRefreshes[item] = pending
+    C_Timer.After(0, function()
+        Runtime.pendingItemRefreshes[item] = nil
+        if pending.full then
+            Runtime:HookItem(item)
+        elseif Runtime.itemEntries[item] then
+            addon.Solo:SyncFromItem(item)
+        end
+    end)
+end
+
 function Runtime:Dispatch(item, trigger)
     local entry = self.itemEntries[item]
     if not entry then return end
@@ -63,6 +83,7 @@ function Runtime:Dispatch(item, trigger)
     end
     addon.Solo:OnTrigger(item, trigger)
     if trigger == Enum.CooldownViewerAlertEventType.OnCooldown
+        or trigger == Enum.CooldownViewerAlertEventType.OnAuraApplied
         or trigger == Enum.CooldownViewerAlertEventType.OnAuraRemoved then
         addon.Effects:HideGlow(item)
     end
@@ -79,25 +100,33 @@ function Runtime:HookItem(item)
 
     if type(item.SetCooldownID) == "function" then
         hooksecurefunc(item, "SetCooldownID", function(frame)
-            addon.Runtime:RefreshItem(frame)
+            addon.Runtime:QueueItemRefresh(frame, false)
         end)
     end
 
     if type(item.RefreshSpellTexture) == "function" then
         hooksecurefunc(item, "RefreshSpellTexture", function(frame)
-            addon.Runtime:ApplyCustomIcon(frame)
+            addon.Runtime:QueueItemRefresh(frame, true)
         end)
     end
 
     if type(item.OnActiveStateChanged) == "function" then
         hooksecurefunc(item, "OnActiveStateChanged", function(frame)
-            addon.Solo:SyncFromItem(frame)
+            addon.Runtime:QueueItemRefresh(frame, true)
         end)
     end
 
     if type(item.OnAuraInstanceInfoSet) == "function" then
         hooksecurefunc(item, "OnAuraInstanceInfoSet", function(frame)
-            addon.Solo:SyncFromItem(frame)
+            addon.Runtime:QueueItemRefresh(frame, true)
+        end)
+    end
+
+    if type(item.OnAuraInstanceInfoCleared) == "function" then
+        hooksecurefunc(item, "OnAuraInstanceInfoCleared", function(frame)
+            -- Aura-backed cooldown abilities need to switch immediately from
+            -- the aura duration to the underlying spell cooldown.
+            addon.Runtime:QueueItemRefresh(frame, true)
         end)
     end
 
@@ -109,9 +138,14 @@ function Runtime:HookItem(item)
         TriggerPandemicAlert = Enum.CooldownViewerAlertEventType.PandemicTime,
     }
     for method, trigger in pairs(hooks) do
+        local capturedTrigger = trigger
         if type(item[method]) == "function" then
             hooksecurefunc(item, method, function(frame)
-                addon.Runtime:Dispatch(frame, trigger)
+                C_Timer.After(0, function()
+                    if addon.Runtime.itemEntries[frame] then
+                        addon.Runtime:Dispatch(frame, capturedTrigger)
+                    end
+                end)
             end)
         end
     end
@@ -120,7 +154,11 @@ function Runtime:HookItem(item)
         hooksecurefunc(item, "TriggerAlertEvent", function(frame, trigger)
             if not addon:IsSecret(trigger)
                 and trigger == Enum.CooldownViewerAlertEventType.OnCooldown then
-                addon.Runtime:Dispatch(frame, trigger)
+                C_Timer.After(0, function()
+                    if addon.Runtime.itemEntries[frame] then
+                        addon.Runtime:Dispatch(frame, Enum.CooldownViewerAlertEventType.OnCooldown)
+                    end
+                end)
             end
         end)
     end
@@ -205,7 +243,7 @@ function Runtime:Install()
                 self.hookedViewers[viewer] = true
                 if type(viewer.OnAcquireItemFrame) == "function" then
                     hooksecurefunc(viewer, "OnAcquireItemFrame", function(_, item)
-                        addon.Runtime:HookItem(item)
+                        addon.Runtime:QueueItemRefresh(item, false)
                         addon.Runtime:ScheduleCDMRefresh()
                     end)
                 end

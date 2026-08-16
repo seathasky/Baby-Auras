@@ -259,6 +259,8 @@ function GUI:RefreshEditor(message)
         end
     end
     frame.Enabled:SetChecked(settings and settings.enabled or false)
+    frame.Zoom:SetChecked(settings and settings.zoom == true or false)
+    frame.Bounce:SetChecked(settings and settings.bounce == true or false)
     frame.Glow:SetChecked(settings and settings.glow or false)
     self.selectedGlowStyle = settings and settings.glowStyle or Defaults.trigger.glowStyle
     local cropEnabled = not isTrackedBar and entrySettings and entrySettings.soloCropEnabled == true
@@ -271,6 +273,7 @@ function GUI:RefreshEditor(message)
     SetColorButtonColor(frame.GlowColor, settings and settings.color or Defaults.trigger.color)
     self:RefreshGlowTuningControls(settings)
     frame.Duration:SetText(tostring(settings and settings.glowDuration or Defaults.trigger.glowDuration))
+    frame.BounceDuration:SetText(tostring(settings and settings.bounceDuration or Defaults.trigger.bounceDuration))
     frame.TextBox:SetText(settings and settings.text or (entry.name .. " " .. (addon.TriggerNames[self.selectedTrigger] or "")))
     frame.SpeechRate:SetText(tostring(settings and settings.speechRate or Defaults.trigger.speechRate))
     frame.TTSVolume:SetValue(settings and settings.ttsVolume or Defaults.trigger.ttsVolume)

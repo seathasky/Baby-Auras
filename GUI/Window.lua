@@ -706,8 +706,12 @@ function GUI:Create()
     local alertsSection = addon.GUISections.Alerts:Build(editor, trigger, frame)
     local effectsTitle, effectsLine, effectsToggle = alertsSection.title, alertsSection.line, alertsSection.toggle
     local glow, glowLabel = alertsSection.glow, alertsSection.glowLabel
+    local zoom, zoomLabel = alertsSection.zoom, alertsSection.zoomLabel
+    local bounce, bounceLabel = alertsSection.bounce, alertsSection.bounceLabel
     local glowStyleLabel, glowStyle = alertsSection.styleLabel, alertsSection.style
     local durationLabel, duration, durationHint = alertsSection.durationLabel, alertsSection.duration, alertsSection.durationHint
+    local bounceDurationLabel, bounceDuration, bounceDurationHint = alertsSection.bounceDurationLabel,
+        alertsSection.bounceDuration, alertsSection.bounceDurationHint
     local glowColor, glowTuning = alertsSection.color, alertsSection.tuning
 
     local audioSection = addon.GUISections.Audio:Build(editor, frame.ResetAlertEffects, frame)
@@ -749,7 +753,7 @@ function GUI:Create()
         soloBlackBorder, soloBorderSize, soloBarTheme.color, soloBarTheme.progress,
         soloFont, soloStackColor, soloCooldownColor, soloHotkeyColor, soloBarTextColor,
         resetSoloTextColors,
-        glow, glowStyle, duration, glowColor, frame.ResetAlertEffects,
+        glow, zoom, bounce, glowStyle, duration, bounceDuration, glowColor, frame.ResetAlertEffects,
         tts, textBox, speechRate, ttsVolume,
         audio, audioDropdown, audioPreview, audioChannel, iconSpellID, prismaticIcon,
     }
@@ -778,7 +782,9 @@ function GUI:Create()
         soloTextColorsLabel, soloStackColor, soloCooldownColor, soloHotkeyColor, soloBarTextColor,
         resetSoloTextColors, triggerLabel,
         effectsTitle, effectsLine,
-        glow, glowLabel, glowStyleLabel, glowStyle, durationLabel, duration, durationHint, glowColor,
+        glow, glowLabel, zoom, zoomLabel, bounce, bounceLabel, glowStyleLabel, glowStyle,
+        durationLabel, duration, durationHint, bounceDurationLabel, bounceDuration,
+        bounceDurationHint, glowColor,
         frame.ResetAlertEffects,
         voiceTitle, voiceLine, tts, ttsLabel, textLabel, textBox, speechRateLabel, speechRate, rateHint, ttsVolume, ttsVolumeValue,
         audio, audioLabel, audioDropdown, audioPreview, audioChannel, iconTitle, iconLine, iconLabel, iconSpellID,

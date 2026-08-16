@@ -47,7 +47,7 @@ function Solo:EnsureDisplay(entry, item)
         end
         self:ClearSnap(display)
         if display.LiveCooldown then self:DetachLiveCooldown(display) end
-        if addon.Glow then addon.Glow:Stop(display) end
+        if addon.Effects then addon.Effects:HideGlow(item) end
         display:Hide()
         if display.EditOutline then display.EditOutline:Hide() end
         display:SetScript("OnDragStart", nil)
@@ -106,6 +106,7 @@ function Solo:RefreshItem(item)
         local oldDisplay = self.displays[oldCooldownID]
         if self.sources[oldCooldownID] == item then
             if oldDisplay and oldDisplay.LiveCooldown then self:DetachLiveCooldown(oldDisplay) end
+            if addon.Effects then addon.Effects:HideGlow(item) end
             self.sources[oldCooldownID] = nil
             if oldDisplay then
                 oldDisplay.active = false
@@ -123,6 +124,7 @@ function Solo:RefreshItem(item)
         if previousSource and previousSource ~= item then
             local display = self.displays[entry.cooldownID]
             if display and display.LiveCooldown then self:DetachLiveCooldown(display) end
+            if addon.Effects then addon.Effects:HideGlow(previousSource) end
             self:SetSourceHidden(previousSource, false)
         end
         self.sources[entry.cooldownID] = item
@@ -138,9 +140,9 @@ function Solo:ReleaseItem(item)
     local display = cooldownID and self.displays[cooldownID]
     if cooldownID and self.sources[cooldownID] == item then
         if display and display.LiveCooldown then self:DetachLiveCooldown(display) end
+        if addon.Effects then addon.Effects:HideGlow(item) end
         self.sources[cooldownID] = nil
         if display then
-            if addon.Glow then addon.Glow:Stop(display) end
             display.active = false
             display.activeState = false
             display:Hide()
@@ -156,7 +158,16 @@ function Solo:ReconcileDisplays()
         local entry = item and addon.Runtime.itemEntries[item]
         if not entry or entry.cooldownID ~= cooldownID then
             if display.LiveCooldown then self:DetachLiveCooldown(display) end
-            if addon.Glow then addon.Glow:Stop(display) end
+            if addon.Effects then
+                if item then
+                    addon.Effects:HideGlow(item)
+                else
+                    addon.Effects:HideGlowTarget(display)
+                    if display.ProcGlowTarget then
+                        addon.Effects:HideGlowTarget(display.ProcGlowTarget)
+                    end
+                end
+            end
             self.sources[cooldownID] = nil
             display.active = false
             display.activeState = false
@@ -202,12 +213,13 @@ function Solo:SetEnabled(entry, enabled)
     else
         self:RemoveFromLinkGroup(entry)
         local display = self.displays[entry.cooldownID]
+        local source = item or self.sources[entry.cooldownID]
+        if addon.Effects and source then addon.Effects:HideGlow(source) end
         if display then
             self:DetachLiveCooldown(display)
-            if addon.Glow then addon.Glow:Stop(display) end
             display:Hide()
         end
-        self:SetSourceHidden(item or self.sources[entry.cooldownID], false)
+        self:SetSourceHidden(source, false)
     end
     return true
 end

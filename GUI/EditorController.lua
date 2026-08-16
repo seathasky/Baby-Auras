@@ -63,6 +63,13 @@ function GUI:CommitEditor()
         self:SetStatus("Glow duration must be 0 or a positive number.")
         return false
     end
+    local bounceDurationText = strtrim(self.frame.BounceDuration:GetText() or "")
+    local bounceDuration = tonumber(bounceDurationText)
+    if triggerEnabled and self.frame.Bounce:GetChecked() == true
+        and bounceDurationText ~= "" and (not bounceDuration or bounceDuration < 0) then
+        self:SetStatus("Bounce duration must be 0 or a positive number.")
+        return false
+    end
 
     local customIconSpellID = tonumber(self.frame.IconSpellID:GetText())
     if triggerEnabled and customIconSpellID and not C_Spell.GetSpellTexture(customIconSpellID) then
@@ -73,6 +80,9 @@ function GUI:CommitEditor()
     local settings = addon:GetTriggerSettings(self.selected.cooldownID, self.selectedTrigger, true)
     settings.enabled = triggerEnabled
     if triggerEnabled then
+        settings.zoom = self.frame.Zoom:GetChecked() == true
+        settings.bounce = self.frame.Bounce:GetChecked() == true
+        settings.bounceDuration = bounceDuration or Defaults.trigger.bounceDuration
         settings.glow = self.frame.Glow:GetChecked() == true
         settings.glowStyle = self.selectedGlowStyle or Defaults.trigger.glowStyle
         settings.glowDuration = duration or Defaults.trigger.glowDuration
@@ -91,6 +101,10 @@ function GUI:CommitEditor()
         local entrySettings = addon:GetEntrySettings(self.selected.cooldownID, true)
         entrySettings.customIconSpellID = customIconSpellID
         addon.Runtime:RefreshAppearances()
+    end
+    if not triggerEnabled or settings.glow ~= true then
+        local item = addon.Runtime:GetLiveItem(self.selected.cooldownID)
+        if item then addon.Effects:HideGlow(item) end
     end
     self:SetStatus("Saved automatically.")
     return true

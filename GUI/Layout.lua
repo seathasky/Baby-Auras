@@ -97,7 +97,7 @@ function GUI:ApplyEditorSectionLayout()
             end
         end
     end
-    local height = 1312
+    local height = 1369
     for _, section in ipairs(frame.EditorSections) do
         if not section.title:IsShown() or self:IsEditorSectionCollapsed(section.key) then
             height = height - section.collapseHeight

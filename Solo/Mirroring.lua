@@ -9,6 +9,19 @@ local EntryUsesAura = Utilities.EntryUsesAura
 local Mirroring = {}
 addon.SoloMirroring = Mirroring
 
+function Solo:QueueItemSync(item)
+    if not item then return end
+    self.pendingItemSyncs = self.pendingItemSyncs or setmetatable({}, { __mode = "k" })
+    if self.pendingItemSyncs[item] then return end
+    self.pendingItemSyncs[item] = true
+    C_Timer.After(0, function()
+        Solo.pendingItemSyncs[item] = nil
+        if addon.Runtime and addon.Runtime.itemEntries[item] then
+            Solo:SyncFromItem(item)
+        end
+    end)
+end
+
 function Solo:MirrorCount(item, value)
     local entry = addon.Runtime.itemEntries[item]
     local display = entry and self.displays[entry.cooldownID]
@@ -31,10 +44,119 @@ local function ResolveCooldownSpellID(entry)
         )
         if ok and liveInfo then info = liveInfo end
     end
-    local spellID = info.overrideTooltipSpellID or info.overrideSpellID
-        or info.spellID or entry.spellID
+    -- Tooltip overrides may identify an aura applied by the ability rather than
+    -- the spell that owns its cooldown. Cooldown/charge state must use the
+    -- actual override/base spell pair.
+    local spellID = info.overrideSpellID or info.spellID or entry.spellID
     if not IsAccessible(spellID) or type(spellID) ~= "number" then return nil end
     return spellID
+end
+
+local function IsCooldownCategory(entry)
+    local category = entry and entry.category
+    local categories = Enum and Enum.CooldownViewerCategory
+    if not categories then return false end
+    return category == categories.Essential
+        or category == categories.Utility
+        or category == categories.SpecAgnosticEssential
+        or category == categories.EquipSlotEssential
+end
+
+local function ResolveUnderlyingSpellID(entry)
+    if not entry then return nil end
+    local info = entry.info or {}
+    if C_CooldownViewer and C_CooldownViewer.GetCooldownViewerCooldownInfo then
+        local ok, liveInfo = pcall(
+            C_CooldownViewer.GetCooldownViewerCooldownInfo, entry.cooldownID
+        )
+        if ok and liveInfo then info = liveInfo end
+    end
+
+    -- Tooltip and linked spell IDs commonly identify the aura applied by an
+    -- ability (Touch of the Magi is one example), not the spell that owns its
+    -- cooldown. Blizzard uses the override/base pair for charge state too.
+    local spellID = info.overrideSpellID or info.spellID
+    if not IsAccessible(spellID) or type(spellID) ~= "number" then return nil end
+    return spellID
+end
+
+function Solo:RestoreUnderlyingCooldown(item, display)
+    local entry = display and display.entry
+    if not item or not display or not IsCooldownCategory(entry) or not C_Spell then
+        return false
+    end
+    -- Never replace a live aura/totem duration. The repair is for the transition
+    -- after that visual source has gone away while the cast spell is still on CD.
+    if item.auraInstanceID ~= nil or item.wasSetFromAura == true then return false end
+    if display.restoringUnderlyingCooldown then return false end
+
+    local spellID = ResolveUnderlyingSpellID(entry)
+    if not spellID then return false end
+
+    local durationObject
+    local restoredDesaturation
+    local hasCharges = false
+    if C_Spell.GetSpellCharges and C_Spell.GetSpellChargeDuration then
+        local ok, charges = pcall(C_Spell.GetSpellCharges, spellID)
+        local maxCharges = ok and charges and charges.maxCharges
+        hasCharges = IsAccessible(maxCharges) and type(maxCharges) == "number" and maxCharges > 1
+        if hasCharges then
+            local currentCharges = charges.currentCharges
+            if IsAccessible(currentCharges) and type(currentCharges) == "number" then
+                restoredDesaturation = currentCharges == 0
+            end
+            local chargeIsActive = charges.isActive
+            if IsAccessible(chargeIsActive) and chargeIsActive == true then
+                ok, durationObject = pcall(C_Spell.GetSpellChargeDuration, spellID)
+                if not ok then durationObject = nil end
+            end
+        end
+    end
+    if not hasCharges and C_Spell.GetSpellCooldown
+        and C_Spell.GetSpellCooldownDuration then
+        local ok, cooldown = pcall(C_Spell.GetSpellCooldown, spellID)
+        local isActive = ok and cooldown and cooldown.isActive
+        local isOnGCD = ok and cooldown and cooldown.isOnGCD
+        -- isActive/isOnGCD can be secret in combat; comparing them directly
+        -- without this gate throws and aborts the whole sync pass.
+        if ok and cooldown and IsAccessible(isActive) and IsAccessible(isOnGCD) then
+            restoredDesaturation = isActive == true and isOnGCD ~= true
+            if restoredDesaturation then
+                ok, durationObject = pcall(C_Spell.GetSpellCooldownDuration, spellID)
+                if not ok then durationObject = nil end
+            end
+        end
+    end
+
+    -- A readable ready/charges state with nothing to restore still needs to
+    -- clear stale desaturation left over from the aura-visual period: native
+    -- SetDesaturated updates aren't reliably re-fired for hasAura spells like
+    -- Touch of the Magi once combat starts.
+    if not durationObject then
+        if type(restoredDesaturation) == "boolean" then
+            display.sourceDesaturated = restoredDesaturation
+            self:ApplyAppearance(display)
+        end
+        return false
+    end
+
+    local cooldown = display.LiveCooldown or display.Cooldown
+    if not cooldown or type(cooldown.SetCooldownFromDurationObject) ~= "function" then
+        return false
+    end
+    display.restoringUnderlyingCooldown = true
+    if type(cooldown.SetUseAuraDisplayTime) == "function" then
+        pcall(cooldown.SetUseAuraDisplayTime, cooldown, false)
+    end
+    if type(cooldown.SetReverse) == "function" then
+        pcall(cooldown.SetReverse, cooldown, false)
+    end
+    local applied = pcall(cooldown.SetCooldownFromDurationObject, cooldown, durationObject)
+    if applied and type(restoredDesaturation) == "boolean" then
+        display.sourceDesaturated = restoredDesaturation
+    end
+    display.restoringUnderlyingCooldown = nil
+    return applied
 end
 
 local function GetLiveChargeInfo(entry)
@@ -94,21 +216,26 @@ function Solo:MirrorCooldown(item, action, ...)
         -- The live Blizzard widget already received this update. Only re-assert
         -- BabyAuras' styling; mirroring it back into itself would recurse.
         if display.applyingAppearance then return end
+        if action == "clear" or action == "durationObject"
+            or action == "duration" or action == "expiration" then
+            self:RestoreUnderlyingCooldown(item, display)
+        end
         self:UpdateActiveState(item, display)
         self:ApplyAppearance(display)
         return
     end
+    local mirroredTiming = false
     if action == "set" then
-        pcall(cooldown.SetCooldown, cooldown, ...)
-        self:SyncCooldown(item, display)
+        mirroredTiming = pcall(cooldown.SetCooldown, cooldown, ...)
     elseif action == "durationObject" then
-        pcall(cooldown.SetCooldownFromDurationObject, cooldown, ...)
+        mirroredTiming = pcall(cooldown.SetCooldownFromDurationObject, cooldown, ...)
     elseif action == "duration" then
-        pcall(cooldown.SetCooldownDuration, cooldown, ...)
+        mirroredTiming = pcall(cooldown.SetCooldownDuration, cooldown, ...)
     elseif action == "expiration" then
-        pcall(cooldown.SetCooldownFromExpirationTime, cooldown, ...)
+        mirroredTiming = pcall(cooldown.SetCooldownFromExpirationTime, cooldown, ...)
     elseif action == "clear" then
         cooldown:Clear()
+        display.nativeAuraCooldownMirrored = nil
     elseif action == "pause" then
         cooldown:Pause()
     elseif action == "resume" then
@@ -145,11 +272,19 @@ function Solo:MirrorCooldown(item, action, ...)
         pcall(cooldown.SetUseAuraDisplayTime, cooldown, ...)
     end
 
-    -- Blizzard may clear or replace the native duration object during the same
-    -- refresh. Do the same for BabyAuras' separate cooldown widget.
-    if not EntryUsesAura(entry) and (action == "durationObject"
-        or action == "duration" or action == "expiration" or action == "clear") then
-        self:SyncSpellCooldown(display)
+    if mirroredTiming then
+        -- The native frame is now the authoritative timer source. Its Cooldown
+        -- widget advances on its own, so deferred appearance/icon refreshes must
+        -- not replace this exact CMC-style copy with a reconstructed timer.
+        display.nativeAuraCooldownMirrored = true
+    end
+
+    -- Aura-capable cooldown items can be cleared or handed a zero-duration aura
+    -- after the aura ends even while their underlying cast spell is still on CD.
+    -- Re-arm only that real cooldown; otherwise keep the exact native update.
+    if action == "durationObject" or action == "duration"
+        or action == "expiration" or action == "clear" then
+        self:RestoreUnderlyingCooldown(item, display)
     end
 end
 
@@ -169,41 +304,104 @@ end
 function Solo:SyncSpellCooldown(display)
     local entry = display and display.entry
     if not entry or not C_Spell then return end
-    -- Aura duration is owned by Blizzard's live cooldown widget and arrives via
-    -- SetCooldownFromDurationObject. Spell APIs describe the underlying spell CD.
-    if EntryUsesAura(entry) then return end
     local spellID = ResolveCooldownSpellID(entry)
     if not spellID then return end
     local durationObject
     local chargeInfo = GetLiveChargeInfo(entry)
     local currentCharges
     local hasCharges = false
+    local onActualCooldown
     if chargeInfo and C_Spell.GetSpellChargeDuration then
         local maxCharges = chargeInfo.maxCharges
-        hasCharges = maxCharges > 1
+        hasCharges = IsAccessible(maxCharges)
+            and type(maxCharges) == "number" and maxCharges > 1
         if hasCharges then
             currentCharges = chargeInfo.currentCharges
+            if IsAccessible(currentCharges) and type(currentCharges) == "number" then
+                onActualCooldown = currentCharges == 0
+            end
+            -- isActive can be a secret value (e.g. Mythic+ combat restrictions).
+            -- The duration object itself is opaque and safe to apply either
+            -- way, so don't gate the fetch on being able to read that flag.
             local ok, result = pcall(C_Spell.GetSpellChargeDuration, spellID)
             if ok then durationObject = result end
         end
     end
-    if hasCharges then
+    if hasCharges and IsAccessible(currentCharges) and type(currentCharges) == "number" then
         pcall(display.Count.SetText, display.Count, currentCharges)
     else
         pcall(display.Count.SetText, display.Count, "")
     end
-    if not durationObject and C_Spell.GetSpellCooldownDuration then
+    if not hasCharges and C_Spell.GetSpellCooldown then
+        local ok, cooldownInfo = pcall(C_Spell.GetSpellCooldown, spellID)
+        if ok and cooldownInfo then
+            local isActive, isOnGCD = cooldownInfo.isActive, cooldownInfo.isOnGCD
+            if IsAccessible(isActive) and IsAccessible(isOnGCD) then
+                onActualCooldown = isActive == true and isOnGCD ~= true
+            end
+        else
+            onActualCooldown = false
+        end
+    end
+    if not hasCharges and onActualCooldown ~= false and C_Spell.GetSpellCooldownDuration then
+        -- Fetch even when isActive/isOnGCD were unreadable (secret): the
+        -- duration object is opaque and SetCooldownFromDurationObject doesn't
+        -- need those booleans to apply it.
         local ok, result = pcall(C_Spell.GetSpellCooldownDuration, spellID)
         if ok then durationObject = result end
     end
+    if type(onActualCooldown) == "boolean" then
+        display.sourceDesaturated = onActualCooldown
+    end
     if durationObject and display.Cooldown.SetCooldownFromDurationObject then
+        if type(display.Cooldown.SetUseAuraDisplayTime) == "function" then
+            pcall(display.Cooldown.SetUseAuraDisplayTime, display.Cooldown, false)
+        end
+        if type(display.Cooldown.SetReverse) == "function" then
+            pcall(display.Cooldown.SetReverse, display.Cooldown, false)
+        end
         pcall(display.Cooldown.SetCooldownFromDurationObject, display.Cooldown, durationObject)
+    elseif onActualCooldown == false and type(display.Cooldown.Clear) == "function" then
+        pcall(display.Cooldown.Clear, display.Cooldown)
     end
 end
 
 function Solo:SyncAuraCooldown(item, display)
     if display and display.LiveCooldown then return true end
-    if not item or not display or not C_UnitAuras or not C_UnitAuras.GetAuraDuration then return false end
+    if not item or not display or not display.Cooldown then return false end
+    if display.nativeAuraCooldownMirrored then return true end
+
+    local cooldown = display.Cooldown
+    if type(cooldown.SetUseAuraDisplayTime) == "function" then
+        pcall(cooldown.SetUseAuraDisplayTime, cooldown, true)
+    end
+    if type(cooldown.SetReverse) == "function" then
+        -- CMC's live-aura cooldown frames use reverse mode. Spell cooldowns
+        -- switch this back off in SyncSpellCooldown/RestoreUnderlyingCooldown.
+        pcall(cooldown.SetReverse, cooldown, true)
+    end
+
+    -- Match CMC's TrackerItemVisuals/ApplyCustomActiveOverlay path: feed a real
+    -- CooldownFrameTemplate with start + duration through SetCooldown. The
+    -- previous SetCooldownFromExpirationTime mirror did not make Retail create
+    -- countdown text for replacement buffs such as Prismatic Bolt.
+    if type(item.GetCooldownValues) == "function"
+        and type(cooldown.SetCooldown) == "function" then
+        local valuesOK, expirationTime, duration, modRate = pcall(item.GetCooldownValues, item)
+        if valuesOK then
+            -- Aura times can be secret in combat. Keep both the subtraction and
+            -- Cooldown call inside pcall; if Retail denies arithmetic here, the
+            -- native duration-object path below remains the protected fallback.
+            local applied = pcall(function()
+                local startTime = expirationTime - duration
+                cooldown:SetCooldown(startTime, duration, modRate)
+                cooldown:SetDrawSwipe(true)
+            end)
+            if applied then return true end
+        end
+    end
+
+    if not C_UnitAuras or not C_UnitAuras.GetAuraDuration then return false end
     if type(item.GetAuraDataUnit) ~= "function" or type(item.GetAuraSpellInstanceID) ~= "function" then
         return false
     end
@@ -217,19 +415,20 @@ function Solo:SyncAuraCooldown(item, display)
     local durationOK, durationObject = pcall(C_UnitAuras.GetAuraDuration, unit, auraInstanceID)
     if not durationOK or not durationObject then return false end
     local applied = pcall(
-        display.Cooldown.SetCooldownFromDurationObject,
-        display.Cooldown, durationObject, true
+        cooldown.SetCooldownFromDurationObject,
+        cooldown, durationObject, true
     )
-    if applied then display.Cooldown:SetUseAuraDisplayTime(true) end
     return applied
 end
 
 function Solo:SyncCooldown(item, display)
     local entry = display and display.entry
     if not entry then return end
-    local info = entry.info or {}
+    if self:RestoreUnderlyingCooldown(item, display) then return end
     if EntryUsesAura(entry) and self:SyncAuraCooldown(item, display) then return end
-    self:SyncSpellCooldown(display)
+    if not EntryUsesAura(entry) or IsCooldownCategory(entry) then
+        self:SyncSpellCooldown(display)
+    end
 end
 
 function Solo:MirrorDesaturation(item, value)
@@ -316,7 +515,7 @@ function Solo:AttachLiveCooldown(item, display, sourceCooldown)
             state.points[index] = { sourceCooldown:GetPoint(index) }
         end
     end)
-    local ok = pcall(function()
+    local ok, attachError = pcall(function()
         sourceCooldown:ClearAllPoints()
         sourceCooldown:SetParent(display)
         sourceCooldown:SetAlpha(1)
@@ -356,7 +555,14 @@ function Solo:InstallMirrors(item, display)
         end
         if not self.mirrorHooks[countSource] then
             self.mirrorHooks[countSource] = true
-            hooksecurefunc(countSource, "SetText", RefreshCount)
+            hooksecurefunc(countSource, "SetText", function()
+                -- Do not inspect a possibly-secret count while Blizzard's native
+                -- refresh is still on the stack. Reading it next frame avoids
+                -- tainting the remainder of that refresh.
+                C_Timer.After(0, function()
+                    pcall(function() RefreshCount(countSource, countSource:GetText()) end)
+                end)
+            end)
         end
         pcall(function() RefreshCount(countSource, countSource:GetText()) end)
     end
@@ -381,7 +587,16 @@ function Solo:InstallMirrors(item, display)
         local function Mirror(method, action)
             if type(sourceCooldown[method]) ~= "function" then return end
             hooksecurefunc(sourceCooldown, method, function(_, ...)
-                Solo:MirrorCooldown(item, action, ...)
+                -- Follow CMC's native cooldown hook pattern: consume the exact
+                -- update Blizzard just applied instead of rediscovering it from
+                -- a spell ID on the following frame. This is essential for
+                -- replacement auras such as Prismatic Bolt, whose timer is not
+                -- a spell cooldown. Keep the deferred sync as a state/appearance
+                -- backup after the native update has completed.
+                if EntryUsesAura(display.entry) then
+                    Solo:MirrorCooldown(item, action, ...)
+                end
+                Solo:QueueItemSync(item)
             end)
         end
         Mirror("SetCooldown", "set")
@@ -397,7 +612,13 @@ function Solo:InstallMirrors(item, display)
         Mirror("SetReverse", "reverse")
         Mirror("SetUseAuraDisplayTime", "useAuraTime")
     end
-    self:AttachLiveCooldown(item, display, sourceCooldown)
+    -- Aura entries reuse Blizzard's own Cooldown widget directly (matches
+    -- v1.0.1): its native swipe/countdown stays authoritative instead of being
+    -- re-derived, which is what made TrackedBuff/TrackedBar reliable.
+    if not self:AttachLiveCooldown(item, display, sourceCooldown) then
+        if display.LiveCooldown then self:DetachLiveCooldown(display) end
+        display.Cooldown:Show()
+    end
 
     local sourceIcon
     if type(item.GetIconTexture) == "function" then
@@ -407,13 +628,13 @@ function Solo:InstallMirrors(item, display)
     sourceIcon = sourceIcon or (item.Icon and item.Icon.Icon) or item.Icon
     if sourceIcon and type(sourceIcon.SetDesaturated) == "function" and not self.mirrorHooks[sourceIcon] then
         self.mirrorHooks[sourceIcon] = true
-        hooksecurefunc(sourceIcon, "SetDesaturated", function(_, value)
-            Solo:MirrorDesaturation(item, value)
-        end)
+        hooksecurefunc(sourceIcon, "SetDesaturated", function() Solo:QueueItemSync(item) end)
     end
     if sourceIcon and type(sourceIcon.IsDesaturated) == "function" then
         local ok, value = pcall(sourceIcon.IsDesaturated, sourceIcon)
-        if ok and type(value) == "boolean" then self:MirrorDesaturation(item, value) end
+        if ok and not addon:IsSecret(value) and type(value) == "boolean" then
+            self:MirrorDesaturation(item, value)
+        end
     end
 
     self:UpdateActiveState(item, display)
@@ -424,8 +645,10 @@ function Solo:InstallMirrors(item, display)
             if not source then return end
             if not self.mirrorHooks[source] then
                 self.mirrorHooks[source] = true
-                hooksecurefunc(source, "SetText", function(_, value)
-                    Solo:MirrorBarText(item, key, value)
+                hooksecurefunc(source, "SetText", function()
+                    C_Timer.After(0, function()
+                        pcall(function() Solo:MirrorBarText(item, key, source:GetText()) end)
+                    end)
                 end)
             end
             pcall(function() Solo:MirrorBarText(item, key, source:GetText()) end)
@@ -438,13 +661,13 @@ function Solo:InstallMirrors(item, display)
             if not self.mirrorHooks[sourceStatusBar] then
                 self.mirrorHooks[sourceStatusBar] = true
                 if type(sourceStatusBar.SetValue) == "function" then
-                    hooksecurefunc(sourceStatusBar, "SetValue", function() Solo:MirrorBarProgress(item) end)
+                    hooksecurefunc(sourceStatusBar, "SetValue", function() Solo:QueueItemSync(item) end)
                 end
                 if type(sourceStatusBar.SetMinMaxValues) == "function" then
-                    hooksecurefunc(sourceStatusBar, "SetMinMaxValues", function() Solo:MirrorBarProgress(item) end)
+                    hooksecurefunc(sourceStatusBar, "SetMinMaxValues", function() Solo:QueueItemSync(item) end)
                 end
                 if type(sourceStatusBar.SetStatusBarColor) == "function" then
-                    hooksecurefunc(sourceStatusBar, "SetStatusBarColor", function() Solo:MirrorBarProgress(item) end)
+                    hooksecurefunc(sourceStatusBar, "SetStatusBarColor", function() Solo:QueueItemSync(item) end)
                 end
             end
             Solo:MirrorBarProgress(item)

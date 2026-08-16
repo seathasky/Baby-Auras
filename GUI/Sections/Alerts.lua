@@ -44,9 +44,19 @@ function Alerts:Build(editor, anchor, frame)
     style:EnableRegenerateOnResponse()
     frame.GlowStyle = style
 
+    local zoom, zoomLabel = Widgets.CreateCheckbox(editor, "Zoom icon", 105)
+    zoom:SetScript("OnClick", function() GUI:OnZoomClicked() end)
+    frame.Zoom = zoom
+    frame.ZoomLabel = zoomLabel
+
+    local bounce, bounceLabel = Widgets.CreateCheckbox(editor, "Bounce icon", 105)
+    bounce:SetScript("OnClick", function() GUI:OnBounceClicked() end)
+    frame.Bounce = bounce
+    frame.BounceLabel = bounceLabel
+
     local durationLabel = editor:CreateFontString(nil, "ARTWORK", "GameFontNormal")
     durationLabel:SetPoint("TOPLEFT", glow, "BOTTOMLEFT", 4, -7)
-    durationLabel:SetText("Duration")
+    durationLabel:SetText("Glow duration")
     frame.DurationLabel = durationLabel
     local duration = CreateFrame("EditBox", nil, editor, "InputBoxTemplate")
     duration:SetPoint("LEFT", durationLabel, "RIGHT", 8, 0)
@@ -60,6 +70,22 @@ function Alerts:Build(editor, anchor, frame)
     durationHint:SetPoint("TOP", duration, "BOTTOM", 0, -1)
     durationHint:SetText("0 = held")
     frame.DurationHint = durationHint
+
+    local bounceDurationLabel = editor:CreateFontString(nil, "ARTWORK", "GameFontNormal")
+    bounceDurationLabel:SetText("Duration")
+    frame.BounceDurationLabel = bounceDurationLabel
+    local bounceDuration = CreateFrame("EditBox", nil, editor, "InputBoxTemplate")
+    bounceDuration:SetPoint("LEFT", bounceDurationLabel, "RIGHT", 8, 0)
+    bounceDuration:SetSize(55, 26)
+    bounceDuration:SetAutoFocus(false)
+    bounceDuration:SetScript("OnEscapePressed", bounceDuration.ClearFocus)
+    bounceDuration:SetScript("OnEnterPressed", function(self) self:ClearFocus(); GUI:CommitEditor() end)
+    bounceDuration:SetScript("OnTextChanged", function() GUI:ScheduleAutoSave() end)
+    frame.BounceDuration = bounceDuration
+    local bounceDurationHint = editor:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+    bounceDurationHint:SetPoint("TOP", bounceDuration, "BOTTOM", 0, -1)
+    bounceDurationHint:SetText("0 = held")
+    frame.BounceDurationHint = bounceDurationHint
 
     local color = Widgets.CreateColorButton(editor, "Glow color")
     color:SetPoint("LEFT", duration, "RIGHT", 24, 0)
@@ -111,9 +137,15 @@ function Alerts:Build(editor, anchor, frame)
         tuning.paddingLabel, tuning.padding, tuning.paddingValue,
     }
 
+    -- Keep motion controls together below the glow controls. Bounce duration
+    -- sits directly beneath Bounce instead of being mixed into glow tuning.
+    zoom:SetPoint("TOPLEFT", tuning.thickness, "BOTTOMLEFT", -7, -18)
+    bounce:SetPoint("TOPLEFT", tuning.padding, "BOTTOMLEFT", -7, -18)
+    bounceDurationLabel:SetPoint("TOPLEFT", bounce, "BOTTOMLEFT", 4, -7)
+
     local reset = CreateFrame("Button", nil, editor, "UIPanelButtonTemplate")
     reset:SetSize(190, 24)
-    reset:SetPoint("TOPLEFT", tuning.thickness, "BOTTOMLEFT", -7, -22)
+    reset:SetPoint("TOPLEFT", zoom, "BOTTOMLEFT", 0, -48)
     reset:SetText("Reset Alert Effects")
     reset:GetFontString():SetTextColor(1, 0.30, 0.30)
     reset:SetScript("OnClick", function() GUI:ResetAlertEffects() end)
@@ -123,13 +155,19 @@ function Alerts:Build(editor, anchor, frame)
     return {
         title = title, line = line, toggle = toggle,
         glow = glow, glowLabel = glowLabel, styleLabel = styleLabel, style = style,
+        zoom = zoom, zoomLabel = zoomLabel,
+        bounce = bounce, bounceLabel = bounceLabel,
         durationLabel = durationLabel, duration = duration, durationHint = durationHint,
+        bounceDurationLabel = bounceDurationLabel, bounceDuration = bounceDuration,
+        bounceDurationHint = bounceDurationHint,
         color = color, tuning = tuning, reset = reset,
         descriptor = {
             key = "effects", title = title, toggle = toggle, bottom = reset,
-            gap = -14, collapseHeight = 192,
+            gap = -14, collapseHeight = 249,
             elements = {
-                glow, glowLabel, styleLabel, style, durationLabel, duration, durationHint, color,
+                glow, glowLabel, styleLabel, style, zoom, zoomLabel, bounce, bounceLabel,
+                durationLabel, duration, durationHint, color,
+                bounceDurationLabel, bounceDuration, bounceDurationHint,
                 tuning.countLabel, tuning.count, tuning.countValue,
                 tuning.speedLabel, tuning.speed, tuning.speedValue,
                 tuning.thicknessLabel, tuning.thickness, tuning.thicknessValue,
