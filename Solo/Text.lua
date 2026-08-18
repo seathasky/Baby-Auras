@@ -158,7 +158,7 @@ function Solo:ApplyNativeTextLayout(display, stackSize, cooldownSize, fontPath,
         local saved = SaveNativeFontState(hostState, "stack", stackText)
         pcall(stackText.SetFont, stackText, fontPath or STANDARD_TEXT_FONT, stackSize, "OUTLINE")
         pcall(stackText.SetTextColor, stackText, stackR, stackG, stackB, stackA)
-        pcall(stackText.SetAlpha, stackText, settings.soloShowStacks == false and 0 or ((saved and saved.alpha) or 1))
+        pcall(stackText.SetAlpha, stackText, settings.soloShowStacks == false and 0 or 1)
         local position = settings.soloStackPosition
         if type(position) == "table" and tonumber(position.x) and tonumber(position.y) then
             pcall(function()
@@ -193,7 +193,7 @@ function Solo:ApplyNativeTextLayout(display, stackSize, cooldownSize, fontPath,
         local saved = SaveNativeFontState(hostState, "cooldown", cooldownText)
         pcall(cooldownText.SetFont, cooldownText, fontPath or STANDARD_TEXT_FONT, cooldownSize, "OUTLINE")
         pcall(cooldownText.SetTextColor, cooldownText, cooldownR, cooldownG, cooldownB, cooldownA)
-        pcall(cooldownText.SetAlpha, cooldownText, settings.soloShowNumbers == false and 0 or ((saved and saved.alpha) or 1))
+        pcall(cooldownText.SetAlpha, cooldownText, settings.soloShowNumbers == false and 0 or 1)
         local position = settings.soloCooldownPosition
         if type(position) == "table" and tonumber(position.x) and tonumber(position.y) then
             pcall(function()

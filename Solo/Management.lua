@@ -70,7 +70,7 @@ function Solo:EnsureDisplay(entry, item)
             self:SaveDisplayPosition(display)
         end
         self:ClearSnap(display)
-        if display.LiveCooldown then self:DetachLiveCooldown(display) end
+        if display.LiveCooldown or display.NativeItem then self:DetachLiveCooldown(display) end
         if addon.Effects then addon.Effects:HideGlow(item) end
         display:Hide()
         if display.EditOutline then display.EditOutline:Hide() end
@@ -147,7 +147,7 @@ function Solo:RefreshItem(item)
         local previousSource = self.sources[entry.cooldownID]
         if previousSource and previousSource ~= item then
             local display = self.displays[entry.cooldownID]
-            if display and display.LiveCooldown then self:DetachLiveCooldown(display) end
+            if display and (display.LiveCooldown or display.NativeItem) then self:DetachLiveCooldown(display) end
             if addon.Effects then addon.Effects:HideGlow(previousSource) end
             self:SetSourceHidden(previousSource, false)
         end
@@ -163,7 +163,7 @@ function Solo:ReleaseItem(item)
     local cooldownID = self.itemCooldownIDs[item]
     local display = cooldownID and self.displays[cooldownID]
     if cooldownID and self.sources[cooldownID] == item then
-        if display and display.LiveCooldown then self:DetachLiveCooldown(display) end
+        if display and (display.LiveCooldown or display.NativeItem) then self:DetachLiveCooldown(display) end
         if addon.Effects then addon.Effects:HideGlow(item) end
         self.sources[cooldownID] = nil
         if display then
@@ -180,8 +180,13 @@ function Solo:ReconcileDisplays()
     for cooldownID, display in pairs(self.displays) do
         local item = self.sources[cooldownID]
         local entry = item and addon.Runtime.itemEntries[item]
-        if not entry or entry.cooldownID ~= cooldownID then
-            if display.LiveCooldown then self:DetachLiveCooldown(display) end
+        local specPreview = display.specPreviewOnly and self.IsSpecPreviewEnabled and self:IsSpecPreviewEnabled(display.entry)
+        if specPreview then
+            display.active = false
+            display.activeState = false
+            self:RefreshDisplay(display)
+        elseif not entry or entry.cooldownID ~= cooldownID then
+            if display.LiveCooldown or display.NativeItem then self:DetachLiveCooldown(display) end
             if addon.Effects then
                 if item then
                     addon.Effects:HideGlow(item)
@@ -197,10 +202,13 @@ function Solo:ReconcileDisplays()
             display.activeState = false
             display:Hide()
         else
+            display.specPreviewOnly = nil
+            display.specPreviewSpecID = nil
             display.entry = entry
             self:RefreshDisplay(display)
         end
     end
+    if self.RefreshSpecPreviewDisplays then self:RefreshSpecPreviewDisplays() end
 end
 
 -- Kept as a no-op compatibility entry point for Runtime.

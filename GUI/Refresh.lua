@@ -297,6 +297,8 @@ function GUI:Refresh()
         self.frame.ClassStatus:SetWidth(self.frame.ClassStatus:GetStringWidth() + 2)
     end
     self:UpdateClassStatusIcon(self.frame.ClassStatusIcon)
+    if self.RefreshSpecIconPanel then self:RefreshSpecIconPanel() end
+    if addon.Solo and addon.Solo.RefreshSpecPreviewDisplays then addon.Solo:RefreshSpecPreviewDisplays() end
     if self.selected then self.selected = addon.Catalog:Get(self.selected.cooldownID) end
     addon.Navigation:Refresh(self.selected and self.selected.cooldownID)
     addon.Solo:RefreshEditSelection()

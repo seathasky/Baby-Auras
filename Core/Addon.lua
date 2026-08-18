@@ -129,6 +129,7 @@ events:SetScript("OnEvent", function(_, event, arg1)
     elseif event == "PLAYER_SPECIALIZATION_CHANGED" and arg1 ~= "player" then
         return
     elseif event == "PLAYER_SPECIALIZATION_CHANGED" or event == "ACTIVE_TALENT_GROUP_CHANGED" then
+        if addon.GUI and addon.GUI.ResetSpecIconPreviews then addon.GUI:ResetSpecIconPreviews() end
         C_Timer.After(0.2, function() addon:RefreshAll() end)
         C_Timer.After(1.0, function() addon:RefreshAll() end)
     elseif event ~= "ADDON_LOADED" then

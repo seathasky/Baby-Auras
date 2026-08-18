@@ -131,7 +131,8 @@ end
 
 function Solo:RefreshDisplay(display)
     local entry = display.entry
-    local enabled = IsSoloEnabled(entry)
+    local specPreview = self.IsSpecPreviewEnabled and self:IsSpecPreviewEnabled(entry) or false
+    local enabled = IsSoloEnabled(entry) or specPreview
     local positioning = self:IsPositioningMode()
     display.Icon:SetTexture(self:GetTexture(entry))
     if display.BarName then display.BarName:SetText(entry.name) end
@@ -160,15 +161,19 @@ function Solo:RefreshDisplay(display)
     -- receives secret cooldown/aura values and therefore cannot taint CDM.
     if display.NativeItem then
         self:ApplyNativeAppearance(display)
-        -- Live mode uses Blizzard's native CDM item. Custom icon artwork is
-        -- applied only to Blizzard's Icon texture region; cooldown/aura state
-        -- remains completely Blizzard-owned. Edit mode uses our local preview.
-        display.Icon:SetShown(positioning)
+        -- Live mode uses Blizzard's native CDM item. Edit mode and cross-spec
+        -- previews use BabyAuras-owned artwork so they remain visible even when
+        -- Blizzard hides or recycles the native item for the inactive spec.
+        display.Icon:SetShown(positioning or specPreview)
         self:ApplyNativeIconTexture(display)
         display.Cooldown:Hide()
         display.Count:Hide()
-        if display.BarBackground then display.BarBackground:SetShown(positioning) end
-        if display.BarTextOverlay then display.BarTextOverlay:SetShown(positioning) end
+        if display.BarBackground then display.BarBackground:SetShown(positioning or specPreview) end
+        if display.BarTextOverlay then display.BarTextOverlay:SetShown(positioning or specPreview) end
+    elseif specPreview then
+        -- A preview-only display must always expose its local texture. A display
+        -- object may have previously been native-hosted before a spec switch.
+        display.Icon:Show()
     end
 
     local textPreview = positioning and self.textPreviewEnabled == true
@@ -205,7 +210,7 @@ function Solo:RefreshDisplay(display)
     self:UpdateLinkVisual(display)
     display:EnableMouse(positioning)
     local alwaysShow = appearance.soloAlwaysShow == true
-    display:SetShown(enabled and (positioning or (not self.suspended and (display.active or alwaysShow))))
+    display:SetShown(enabled and (specPreview or positioning or (not self.suspended and (display.active or alwaysShow))))
     if display.NativeItem then
         self:PositionNativeItem(display.NativeItem, display)
         self:UpdateNativeVisibility(display)

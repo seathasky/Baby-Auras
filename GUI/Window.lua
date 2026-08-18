@@ -328,7 +328,9 @@ function GUI:Create()
     separator:SetWidth(1)
 
     local classStatusGroup = CreateFrame("Frame", nil, frame)
-    classStatusGroup:SetPoint("RIGHT", frame, "BOTTOMLEFT", 359, 17)
+    -- Current specialization/class identity lives inside the left title header,
+    -- aligned to the far-right side of the same header strip as the Baby Auras logo.
+    classStatusGroup:SetPoint("RIGHT", frame, "TOPLEFT", 351, -30)
     classStatusGroup:SetHeight(23)
 
     local classStatusIcon = classStatusGroup:CreateTexture(nil, "ARTWORK")
@@ -345,6 +347,10 @@ function GUI:Create()
     frame.ClassStatus = classStatus
     classStatusGroup:SetWidth(21 + 7 + classStatus:GetStringWidth())
     frame.ClassStatusGroup = classStatusGroup
+
+    -- Session-only cross-spec Solo layout preview. The button occupies the
+    -- former class/spec footer slot at the right edge of the left footer.
+    self:CreateSpecIconPanel(frame)
 
     -- Settings cogwheel, dimmer, popup, and destructive-action prompts.
     -- Keep the settings popup's many construction locals out of the editor

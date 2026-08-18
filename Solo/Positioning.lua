@@ -4,6 +4,10 @@ local Solo = addon.Solo
 local Utilities = addon.SoloUtilities
 local GetSoloBaseDimensions = Utilities.GetSoloBaseDimensions
 local IsSoloEnabled = Utilities.IsSoloEnabled
+
+local function IsPositioningVisible(entry)
+    return Solo.IsVisibleForPositioning and Solo:IsVisibleForPositioning(entry) or IsSoloEnabled(entry)
+end
 local GetScreenCenter = Utilities.GetScreenCenter
 local ScreenToUIParent = Utilities.ScreenToUIParent
 
@@ -22,7 +26,7 @@ function Solo:GetDefaultPosition(entry, item)
     local barHeight = self.editBar:GetHeight() * self.editBar:GetScale()
     local occupiedWidth = 0
     for cooldownID, display in pairs(self.displays) do
-        if cooldownID ~= entry.cooldownID and IsSoloEnabled(display.entry) then
+        if cooldownID ~= entry.cooldownID and IsPositioningVisible(display.entry) then
             occupiedWidth = occupiedWidth + (display:GetWidth() * display:GetScale()) + 6
         end
     end
@@ -121,7 +125,7 @@ function Solo:UpdateSnap(display)
 
     for _, other in pairs(self.displays) do
         local sameLinkGroup = displayLinkGroup and self:GetLinkGroupID(other.entry) == displayLinkGroup
-        if other ~= display and not sameLinkGroup and other:IsShown() and IsSoloEnabled(other.entry) then
+        if other ~= display and not sameLinkGroup and other:IsShown() and IsPositioningVisible(other.entry) then
             local otherX, otherY = GetScreenCenter(other)
             if otherX and otherY then
                 local otherWidth = other:GetWidth() * other:GetEffectiveScale()
