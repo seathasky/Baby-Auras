@@ -68,7 +68,27 @@ end
 
 function Utilities.IsSoloEnabled(entry)
     local settings = entry and addon:GetEntrySettings(entry.cooldownID, false)
-    return settings and settings.solo == true
+    if not settings or settings.solo ~= true then return false end
+    if entry.info and entry.info.isKnown == false then return false end
+
+    local currentSpecID = addon:GetCurrentSpecID()
+    if not currentSpecID then return false end
+    local specKey = tostring(currentSpecID)
+
+    -- Solo options used to be class-wide. Assign existing enabled icons to the
+    -- spec the character is currently using on their first post-update load.
+    -- This keeps every saved option intact while preventing them from leaking
+    -- into other specs going forward.
+    if type(settings.soloSpecs) ~= "table" then
+        settings.soloSpecs = {}
+        if settings.soloSpecID ~= nil then
+            settings.soloSpecs[tostring(settings.soloSpecID)] = true
+            settings.soloSpecID = nil
+        else
+            settings.soloSpecs[specKey] = true
+        end
+    end
+    return settings.soloSpecs[specKey] == true
 end
 
 function Utilities.GetScreenCenter(frame)

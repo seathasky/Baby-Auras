@@ -20,7 +20,7 @@ local displayOverridesByCooldownID = {
 }
 
 local function GetDisplaySpellID(info)
-    return info.overrideSpellID or info.overrideTooltipSpellID or info.spellID
+    return info.overrideTooltipSpellID or info.overrideSpellID or info.spellID
 end
 
 function Catalog:Build()
@@ -76,11 +76,17 @@ function Catalog:Build()
     end)
 end
 
-function Catalog:GetDisplayIcon(entry)
+function Catalog:GetCustomIcon(entry)
     if not entry then return nil end
     local settings = addon:GetEntrySettings(entry.cooldownID, false)
     local customSpellID = settings and tonumber(settings.customIconSpellID)
-    local customIcon = customSpellID and C_Spell.GetSpellTexture(customSpellID)
+    return customSpellID and C_Spell.GetSpellTexture(customSpellID) or nil
+end
+
+function Catalog:GetDisplayIcon(entry)
+    if not entry then return nil end
+    local settings = addon:GetEntrySettings(entry.cooldownID, false)
+    local customIcon = self:GetCustomIcon(entry)
     if customIcon then return customIcon end
     if entry.cooldownID == 198408 and entry.realIcon
         and (not settings or settings.showPrismaticBoltIcon ~= false) then

@@ -8,9 +8,11 @@ addon.Effects = {
     forcedGlowDisplays = setmetatable({}, { __mode = "k" }),
     zoomAnimations = setmetatable({}, { __mode = "k" }),
     activeZoomTargets = setmetatable({}, { __mode = "k" }),
+    activeZoomCompanions = setmetatable({}, { __mode = "k" }),
     forcedZoomDisplays = setmetatable({}, { __mode = "k" }),
     bounceAnimations = setmetatable({}, { __mode = "k" }),
     activeBounceTargets = setmetatable({}, { __mode = "k" }),
+    activeBounceCompanions = setmetatable({}, { __mode = "k" }),
     forcedBounceDisplays = setmetatable({}, { __mode = "k" }),
     bounceGeneration = setmetatable({}, { __mode = "k" }),
 }
@@ -21,7 +23,7 @@ function Effects:GetGlowTarget(item, style)
     local entry = addon.Runtime and addon.Runtime.itemEntries[item]
     local display = entry and addon.Solo and addon.Solo.displays[entry.cooldownID]
     local settings = entry and addon:GetEntrySettings(entry.cooldownID, false)
-    if display and settings and settings.solo == true then
+    if display and settings and addon.SoloUtilities.IsSoloEnabled(entry) then
         if style == "blizzard" and display.isBar and display.ProcGlowTarget then
             return display.ProcGlowTarget, true
         end
@@ -62,9 +64,11 @@ end
 function Effects:RestoreForcedZoomDisplay(item, display)
     if not display then return end
     local glowTarget = self.activeGlowTargets[item]
+    local bounceTarget = self.activeBounceTargets[item]
+    local bounceCompanion = self.activeBounceCompanions[item]
     if glowTarget then
         self.forcedGlowDisplays[glowTarget] = display
-    elseif self.activeBounceTargets[item] == display then
+    elseif bounceTarget == display or bounceCompanion == display or bounceTarget == display.NativeItem then
         self.forcedBounceDisplays[item] = display
     elseif addon.Solo then
         addon.Solo:RefreshDisplay(display)
@@ -106,12 +110,18 @@ end
 function Effects:StopZoom(item)
     if not item then return end
     local target = self.activeZoomTargets[item]
-    if not target then return end
+    local companion = self.activeZoomCompanions[item]
+    if not target and not companion then return end
     self.activeZoomTargets[item] = nil
-    local animation = self.zoomAnimations[target]
-    if animation then
-        animation.ActiveItem = nil
-        if animation:IsPlaying() then animation:Stop() end
+    self.activeZoomCompanions[item] = nil
+    for _, motionTarget in ipairs({ target, companion }) do
+        if motionTarget then
+            local animation = self.zoomAnimations[motionTarget]
+            if animation then
+                animation.ActiveItem = nil
+                if animation:IsPlaying() then animation:Stop() end
+            end
+        end
     end
     local forcedDisplay = self.forcedZoomDisplays[item]
     self.forcedZoomDisplays[item] = nil
@@ -121,20 +131,28 @@ end
 function Effects:StopBounce(item)
     if not item then return end
     local target = self.activeBounceTargets[item]
+    local companion = self.activeBounceCompanions[item]
     self.bounceGeneration[item] = (self.bounceGeneration[item] or 0) + 1
-    if not target then return end
+    if not target and not companion then return end
     self.activeBounceTargets[item] = nil
-    local animation = self.bounceAnimations[target]
-    if animation then
-        animation.ActiveItem = nil
-        if animation:IsPlaying() then animation:Stop() end
+    self.activeBounceCompanions[item] = nil
+    for _, motionTarget in ipairs({ target, companion }) do
+        if motionTarget then
+            local animation = self.bounceAnimations[motionTarget]
+            if animation then
+                animation.ActiveItem = nil
+                if animation:IsPlaying() then animation:Stop() end
+            end
+        end
     end
     local forcedDisplay = self.forcedBounceDisplays[item]
     self.forcedBounceDisplays[item] = nil
     local glowTarget = self.activeGlowTargets[item]
+    local zoomTarget = self.activeZoomTargets[item]
+    local zoomCompanion = self.activeZoomCompanions[item]
     if forcedDisplay and glowTarget then
         self.forcedGlowDisplays[glowTarget] = forcedDisplay
-    elseif forcedDisplay and self.activeZoomTargets[item] == forcedDisplay then
+    elseif forcedDisplay and (zoomTarget == forcedDisplay or zoomCompanion == forcedDisplay or zoomTarget == forcedDisplay.NativeItem) then
         self.forcedZoomDisplays[item] = forcedDisplay
     elseif forcedDisplay and addon.Solo then
         addon.Solo:RefreshDisplay(forcedDisplay)
@@ -145,11 +163,22 @@ function Effects:GetIconMotionTarget(item)
     local entry = addon.Runtime and addon.Runtime.itemEntries[item]
     local display = entry and addon.Solo and addon.Solo.displays[entry.cooldownID]
     local settings = entry and addon:GetEntrySettings(entry.cooldownID, false)
-    local target = display and settings and settings.solo == true and display or item
-    if not target then return nil end
-    if target == display and display.isBar then return nil end
-    if target == item and addon.Solo and addon.Solo:IsTrackedBarItem(item) then return nil end
-    return target, target == display
+
+    if display and settings and addon.SoloUtilities.IsSoloEnabled(entry) then
+        if display.isBar then return nil end
+
+        -- Native-hosted Solo icons are visually rendered by Blizzard's CDM item.
+        -- Animating the BabyAuras shell only moves its border/overlays, which is
+        -- why Bounce and Zoom appeared to affect only the border. Animate the
+        -- hosted visual itself so icon + cooldown + text move together.
+        if display.NativeItem then
+            return display.NativeItem, true, display
+        end
+        return display, true, display
+    end
+
+    if addon.Solo and addon.Solo:IsTrackedBarItem(item) then return nil end
+    return item, false, nil
 end
 
 function Effects:CreateBounceAnimation(target)
@@ -172,16 +201,39 @@ end
 function Effects:PlayZoom(item)
     if not item then return false end
     self:StopZoom(item)
-    local target, isSolo = self:GetIconMotionTarget(item)
+    local target, isSolo, soloDisplay = self:GetIconMotionTarget(item)
     if not target then return false end
     local animation = self.zoomAnimations[target] or self:CreateZoomAnimation(target)
     if animation.ActiveItem and animation.ActiveItem ~= item then self:StopZoom(animation.ActiveItem) end
-    if isSolo and not target:IsShown() and addon.Solo and not addon.Solo.suspended then
-        target:Show()
-        self.forcedZoomDisplays[item] = target
+    if isSolo and soloDisplay and addon.Solo and not addon.Solo.suspended then
+        local needsForce = not soloDisplay:IsShown()
+        if target == soloDisplay.NativeItem then
+            local ok, alpha = pcall(target.GetAlpha, target)
+            needsForce = needsForce or (ok and alpha == 0)
+        end
+        if needsForce then
+            soloDisplay:Show()
+            if target == soloDisplay.NativeItem then pcall(target.SetAlpha, target, 1) end
+            self.forcedZoomDisplays[item] = soloDisplay
+        end
     end
     animation.ActiveItem = item
     self.activeZoomTargets[item] = target
+
+    -- The native CDM item and the BabyAuras shell are separate frames. Animate
+    -- both with identical transforms so the Blizzard-rendered icon/timer and the
+    -- BabyAuras border/glow remain visually locked together.
+    local companion = (soloDisplay and target == soloDisplay.NativeItem) and soloDisplay or nil
+    if companion then
+        local companionAnimation = self.zoomAnimations[companion] or self:CreateZoomAnimation(companion)
+        if companionAnimation.ActiveItem and companionAnimation.ActiveItem ~= item then
+            self:StopZoom(companionAnimation.ActiveItem)
+        end
+        companionAnimation.ActiveItem = item
+        self.activeZoomCompanions[item] = companion
+        companionAnimation:Play()
+    end
+
     animation:Play()
     return true
 end
@@ -189,16 +241,38 @@ end
 function Effects:PlayBounce(item, duration)
     if not item then return false end
     self:StopBounce(item)
-    local target, isSolo = self:GetIconMotionTarget(item)
+    local target, isSolo, soloDisplay = self:GetIconMotionTarget(item)
     if not target then return false end
     local animation = self.bounceAnimations[target] or self:CreateBounceAnimation(target)
     if animation.ActiveItem and animation.ActiveItem ~= item then self:StopBounce(animation.ActiveItem) end
-    if isSolo and not target:IsShown() and addon.Solo and not addon.Solo.suspended then
-        target:Show()
-        self.forcedBounceDisplays[item] = target
+    if isSolo and soloDisplay and addon.Solo and not addon.Solo.suspended then
+        local needsForce = not soloDisplay:IsShown()
+        if target == soloDisplay.NativeItem then
+            local ok, alpha = pcall(target.GetAlpha, target)
+            needsForce = needsForce or (ok and alpha == 0)
+        end
+        if needsForce then
+            soloDisplay:Show()
+            if target == soloDisplay.NativeItem then pcall(target.SetAlpha, target, 1) end
+            self.forcedBounceDisplays[item] = soloDisplay
+        end
     end
     animation.ActiveItem = item
     self.activeBounceTargets[item] = target
+
+    -- Keep the BabyAuras shell/border synchronized with the separately hosted
+    -- Blizzard CDM visual for the entire bounce.
+    local companion = (soloDisplay and target == soloDisplay.NativeItem) and soloDisplay or nil
+    if companion then
+        local companionAnimation = self.bounceAnimations[companion] or self:CreateBounceAnimation(companion)
+        if companionAnimation.ActiveItem and companionAnimation.ActiveItem ~= item then
+            self:StopBounce(companionAnimation.ActiveItem)
+        end
+        companionAnimation.ActiveItem = item
+        self.activeBounceCompanions[item] = companion
+        companionAnimation:Play()
+    end
+
     local generation = (self.bounceGeneration[item] or 0) + 1
     self.bounceGeneration[item] = generation
     animation:Play()

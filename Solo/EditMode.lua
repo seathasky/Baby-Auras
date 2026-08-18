@@ -442,6 +442,11 @@ function Solo:CreateEditBar()
     done:SetScript("OnEnter", function(self) self:SetBackdropColor(0.10, 0.28, 0.42, 1) end)
     done:SetScript("OnLeave", function(self) self:SetBackdropColor(0.06, 0.16, 0.25, 1) end)
     done:SetScript("OnClick", function()
+        -- Return is an unconditional exit from Baby Edit Mode. Preview Mode
+        -- must never be able to trap the user in positioning mode.
+        if addon.GUI and addon.GUI.previewMode then
+            addon.GUI:StopTestGlow(true)
+        end
         local manager = _G.EditModeManagerFrame
         if Solo.combinedEditMode and manager and manager:IsShown() then
             if manager.HasActiveChanges and manager:HasActiveChanges() then
@@ -452,9 +457,9 @@ function Solo:CreateEditBar()
             return
         end
         if Solo.guiPositionMode then
-            if Solo:SetIconsLocked(true) == false and addon.GUI then
-                addon.GUI:SetStatus("Turn off Preview Mode before locking Solo icons.")
-            end
+            Solo:SetIconsLocked(true)
+            Solo:SetGUIPositionMode(false)
+            if addon.GUI then addon.GUI:SetStatus("Baby Edit Mode closed.") end
             return
         end
         Solo:SetEditMode(false, true)

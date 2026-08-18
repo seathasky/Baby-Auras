@@ -106,6 +106,104 @@ function Solo:SetTextPosition(entry, positionKey, x, y)
     if display then self:ApplyTextLayout(display) end
 end
 
+
+local function GetNativeStackFontString(item)
+    if not item then return nil end
+    if item.Applications and item.Applications.Applications then
+        return item.Applications.Applications
+    end
+    if item.ChargeCount and item.ChargeCount.Current then
+        return item.ChargeCount.Current
+    end
+    return item.count
+end
+
+local function GetNativeCooldownFontString(item)
+    local cooldown = item and item.Cooldown
+    if not cooldown or type(cooldown.GetCountdownFontString) ~= "function" then return nil end
+    local ok, text = pcall(cooldown.GetCountdownFontString, cooldown)
+    return ok and text or nil
+end
+
+local function SaveNativeFontState(hostState, key, fontString)
+    if not hostState or not fontString then return nil end
+    hostState.textDefaults = hostState.textDefaults or {}
+    if hostState.textDefaults[key] then return hostState.textDefaults[key] end
+    local saved = { region = fontString, points = {} }
+    pcall(function()
+        saved.font = { fontString:GetFont() }
+        saved.color = { fontString:GetTextColor() }
+        saved.alpha = fontString:GetAlpha()
+        for i = 1, fontString:GetNumPoints() do
+            saved.points[#saved.points + 1] = { fontString:GetPoint(i) }
+        end
+    end)
+    hostState.textDefaults[key] = saved
+    return saved
+end
+
+function Solo:ApplyNativeTextLayout(display, stackSize, cooldownSize, fontPath,
+        stackR, stackG, stackB, stackA, cooldownR, cooldownG, cooldownB, cooldownA)
+    local item = display and display.NativeItem
+    if not item then return end
+    local hostState = self.nativeHostStates and self.nativeHostStates[item]
+    if not hostState then return end
+    local settings = GetEntryAppearance(display.entry)
+
+    -- These are Blizzard-owned FontStrings, but changing font/anchor properties is
+    -- the same presentation-only technique used by CMC. We never copy or inspect
+    -- Blizzard's secret cooldown/aura values.
+    local stackText = GetNativeStackFontString(item)
+    if stackText then
+        local saved = SaveNativeFontState(hostState, "stack", stackText)
+        pcall(stackText.SetFont, stackText, fontPath or STANDARD_TEXT_FONT, stackSize, "OUTLINE")
+        pcall(stackText.SetTextColor, stackText, stackR, stackG, stackB, stackA)
+        pcall(stackText.SetAlpha, stackText, settings.soloShowStacks == false and 0 or ((saved and saved.alpha) or 1))
+        local position = settings.soloStackPosition
+        if type(position) == "table" and tonumber(position.x) and tonumber(position.y) then
+            pcall(function()
+                stackText:ClearAllPoints()
+                stackText:SetPoint("CENTER", item, "CENTER", tonumber(position.x), tonumber(position.y))
+            end)
+        end
+    end
+
+    local cooldownText = GetNativeCooldownFontString(item)
+    if not cooldownText and settings.soloShowNumbers ~= false then
+        -- Cooldown's countdown FontString is created lazily by Blizzard. If this
+        -- appearance pass lands before that creation, retry after Blizzard's
+        -- cooldown update has settled instead of waiting for a UI reload. Keep
+        -- one bounded retry batch per hosted item so an idle cooldown cannot
+        -- create a perpetual timer loop.
+        if not hostState.cooldownTextRetryPending then
+            hostState.cooldownTextRetryPending = true
+            for index, delay in ipairs({ 0.05, 0.20 }) do
+                C_Timer.After(delay, function()
+                    local current = Solo.nativeHostStates and Solo.nativeHostStates[item]
+                    if current ~= hostState or current.display ~= display then return end
+                    Solo:ApplyTextLayout(display)
+                    if index == 2 then
+                        current.cooldownTextRetryPending = nil
+                    end
+                end)
+            end
+        end
+    elseif cooldownText then
+        hostState.cooldownTextRetryPending = nil
+        local saved = SaveNativeFontState(hostState, "cooldown", cooldownText)
+        pcall(cooldownText.SetFont, cooldownText, fontPath or STANDARD_TEXT_FONT, cooldownSize, "OUTLINE")
+        pcall(cooldownText.SetTextColor, cooldownText, cooldownR, cooldownG, cooldownB, cooldownA)
+        pcall(cooldownText.SetAlpha, cooldownText, settings.soloShowNumbers == false and 0 or ((saved and saved.alpha) or 1))
+        local position = settings.soloCooldownPosition
+        if type(position) == "table" and tonumber(position.x) and tonumber(position.y) then
+            pcall(function()
+                cooldownText:ClearAllPoints()
+                cooldownText:SetPoint("CENTER", item.Cooldown, "CENTER", tonumber(position.x), tonumber(position.y))
+            end)
+        end
+    end
+end
+
 local function FindCooldownText(frame, depth)
     if not frame or (depth or 0) > 3 then return nil end
     local ok, regions = pcall(function() return { frame:GetRegions() } end)
@@ -197,6 +295,10 @@ function Solo:ApplyTextLayout(display)
     display.CooldownPreview:SetTextColor(cooldownR, cooldownG, cooldownB, cooldownA)
     display.Hotkey:SetTextColor(hotkeyR, hotkeyG, hotkeyB, hotkeyA)
     display.Hotkey:SetText(settings.soloHotkey or Defaults.soloAppearance.hotkey)
+    if display.NativeItem then
+        self:ApplyNativeTextLayout(display, stackSize, cooldownSize, fontPath,
+            stackR, stackG, stackB, stackA, cooldownR, cooldownG, cooldownB, cooldownA)
+    end
     local x, y = GetDefaultTextPosition(display, "soloCooldownPosition")
     local saved = settings.soloCooldownPosition
     if type(saved) == "table" then

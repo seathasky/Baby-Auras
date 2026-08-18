@@ -75,6 +75,11 @@ function Solo:ApplyAppearance(display)
     local cooldown = display.LiveCooldown or display.Cooldown
     if settings.soloShowSwipe == false then
         pcall(cooldown.SetDrawSwipe, cooldown, false)
+    elseif display.sourceDrawSwipe ~= nil then
+        -- CDM deliberately hides the radial swipe while certain charge/use
+        -- counters recharge. Preserve that native state instead of drawing a
+        -- conflicting wheel over the timer it supplied.
+        pcall(cooldown.SetDrawSwipe, cooldown, display.sourceDrawSwipe)
     else
         pcall(cooldown.SetDrawSwipe, cooldown, true)
     end
@@ -149,9 +154,26 @@ function Solo:RefreshDisplay(display)
         display:SetBackdropBorderColor(0.55, 0.9, 1, 0)
     end
     self:ApplyAppearance(display)
+    -- Live mode is rendered by Blizzard's native CDM item. Edit mode must not
+    -- depend on Blizzard keeping that item visible, so render a local preview
+    -- shell from the same resolved texture while positioning. This preview never
+    -- receives secret cooldown/aura values and therefore cannot taint CDM.
+    if display.NativeItem then
+        self:ApplyNativeAppearance(display)
+        -- Live mode uses Blizzard's native CDM item. Custom icon artwork is
+        -- applied only to Blizzard's Icon texture region; cooldown/aura state
+        -- remains completely Blizzard-owned. Edit mode uses our local preview.
+        display.Icon:SetShown(positioning)
+        self:ApplyNativeIconTexture(display)
+        display.Cooldown:Hide()
+        display.Count:Hide()
+        if display.BarBackground then display.BarBackground:SetShown(positioning) end
+        if display.BarTextOverlay then display.BarTextOverlay:SetShown(positioning) end
+    end
+
     local textPreview = positioning and self.textPreviewEnabled == true
     display.StackPreview:SetShown(textPreview and appearance.soloShowStacks ~= false)
-    display.Count:SetShown(not textPreview and appearance.soloShowStacks ~= false)
+    display.Count:SetShown(not display.NativeItem and not textPreview and appearance.soloShowStacks ~= false)
     display.CooldownPreview:SetShown(textPreview and appearance.soloShowNumbers ~= false)
     if textPreview and appearance.soloShowNumbers ~= false then
         pcall((display.LiveCooldown or display.Cooldown).SetHideCountdownNumbers,
@@ -184,6 +206,10 @@ function Solo:RefreshDisplay(display)
     display:EnableMouse(positioning)
     local alwaysShow = appearance.soloAlwaysShow == true
     display:SetShown(enabled and (positioning or (not self.suspended and (display.active or alwaysShow))))
+    if display.NativeItem then
+        self:PositionNativeItem(display.NativeItem, display)
+        self:UpdateNativeVisibility(display)
+    end
 end
 
 function Solo:RefreshEditSelection()

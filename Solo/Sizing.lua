@@ -11,13 +11,17 @@ end
 
 function Solo:ApplyDisplayScale(display)
     display:SetScale(self:GetScale(display.entry))
+    if display.NativeItem then self:PositionNativeItem(display.NativeItem, display) end
 end
 
 function Solo:SetScale(entry, percent)
     local settings = addon:GetEntrySettings(entry.cooldownID, true)
     settings.soloScale = Clamp(math.floor((tonumber(percent) or Defaults.soloScale) + 0.5), 50, 200)
     local display = self.displays[entry.cooldownID]
-    if display then self:ApplyDisplayScale(display) end
+    if display then
+        self:ApplyDisplayScale(display)
+        if display.NativeItem then self:PositionNativeItem(display.NativeItem, display) end
+    end
 end
 
 function Solo:SetBarDimension(entry, settingKey, value)

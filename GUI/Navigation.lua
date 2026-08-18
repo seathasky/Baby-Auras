@@ -148,8 +148,7 @@ function Navigation:Refresh(selectedCooldownID)
                 button.sectionKey = section.key
                 button.Icon:SetTexture(addon.Catalog:GetDisplayIcon(data.entry))
                 button:SetAlpha(1)
-                local settings = addon:GetEntrySettings(data.entry.cooldownID, false)
-                button.Solo:SetShown(settings and settings.solo == true)
+                button.Solo:SetShown(addon.SoloUtilities.IsSoloEnabled(data.entry))
                 if data.entry.cooldownID == selectedCooldownID then
                     button.SelectionOutline:Show()
                 else

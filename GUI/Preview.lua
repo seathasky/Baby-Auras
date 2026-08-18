@@ -70,13 +70,17 @@ function GUI:ClearPreviewSelection()
 end
 
 function GUI:RefreshPreviewSelection()
-    if not self.previewMode or not self.selected then return end
+    if not self.previewMode then return end
     self:ClearPreviewSelection()
     addon.Solo:SetGUIPositionMode(true)
     addon.Solo:SetIconsLocked(false)
-    local entrySettings = addon:GetEntrySettings(self.selected.cooldownID, false)
-    if entrySettings and entrySettings.solo == true then
-        addon.Solo:ToggleTextPreview(self.selected, true)
+    addon.Solo:SetTextPreviewEnabled(true)
+    if not self.selected then
+        self:UpdateTestAlertButton()
+        return
+    end
+    if addon.SoloUtilities.IsSoloEnabled(self.selected) then
+        addon.Solo:EnsureDisplay(self.selected, addon.Runtime:GetLiveItem(self.selected.cooldownID))
     end
     local item = addon.Runtime:GetLiveItem(self.selected.cooldownID)
     if self.frame.Glow:GetChecked() and item then
@@ -96,7 +100,7 @@ function GUI:StopTestGlow(silent)
     local wasActive = self.previewMode == true or self.testGlowTarget ~= nil
     self:ClearPreviewSelection()
     self.previewMode = false
-    if self.selected then addon.Solo:ToggleTextPreview(self.selected, false) end
+    addon.Solo:SetTextPreviewEnabled(false)
     if wasActive then
         self.stoppingPreviewMode = true
         addon.Solo:SetIconsLocked(true)
@@ -107,31 +111,30 @@ function GUI:StopTestGlow(silent)
 end
 
 function GUI:TestEditor()
-    if not self.selected then return end
     if self.previewMode then
         self:StopTestGlow(false)
         return
     end
     self.previewMode = true
-    local item = addon.Runtime:GetLiveItem(self.selected.cooldownID)
-    local soundDescription = "No sound selected"
+    local item = self.selected and addon.Runtime:GetLiveItem(self.selected.cooldownID) or nil
+    local soundDescription = self.selected and "No sound selected" or "No icon selected"
     local textValue = self.frame.TextBox:GetText() or ""
-    if self.frame.TTS:GetChecked() and textValue ~= "" then
+    if self.selected and self.frame.TTS:GetChecked() and textValue ~= "" then
         addon.Effects:Speak(
             textValue,
             tonumber(self.frame.SpeechRate:GetText()) or Defaults.trigger.speechRate,
             self.frame.TTSVolume:GetValue()
         )
         soundDescription = "TTS preview played"
-    elseif self.frame.Audio:GetChecked() then
+    elseif self.selected and self.frame.Audio:GetChecked() then
         addon.Audio:Play(self.selectedAudio, self.selectedAudioChannel)
         soundDescription = self.selectedAudio and "Audio preview played" or "Choose an audio cue first"
     end
     addon.Solo:SetGUIPositionMode(true)
     addon.Solo:SetIconsLocked(false)
-    local entrySettings = addon:GetEntrySettings(self.selected.cooldownID, false)
-    if entrySettings and entrySettings.solo == true then
-        addon.Solo:ToggleTextPreview(self.selected, true)
+    addon.Solo:SetTextPreviewEnabled(true)
+    if self.selected and addon.SoloUtilities.IsSoloEnabled(self.selected) then
+        addon.Solo:EnsureDisplay(self.selected, item)
     end
     if self.frame.Glow:GetChecked() and item then
         self.testGlowTarget = addon.Effects:ShowGlow(item, self:GetCurrentTestGlowSettings())
@@ -144,6 +147,6 @@ function GUI:TestEditor()
         self.previewMotionItem = item
     end
     self:UpdateTestAlertButton()
-    self:SetStatus(soundDescription .. "; Preview Mode ON - enabled visual effects are shown for inspection.")
+    self:SetStatus(soundDescription .. "; Preview Mode ON - Solo icon previews are available for inspection.")
 end
 

@@ -29,11 +29,35 @@ function Solo:IsEligible(entry)
 end
 
 function Solo:GetTexture(entry)
+    local customIcon = entry and addon.Catalog:GetCustomIcon(entry)
+    if customIcon then return customIcon end
+    local item = entry and addon.Runtime and addon.Runtime:GetLiveItem(entry.cooldownID)
+    if item and type(item.GetSpellTexture) == "function" then
+        local ok, texture = pcall(item.GetSpellTexture, item)
+        if ok and texture and not addon:IsSecret(texture) and (not canaccessvalue or canaccessvalue(texture)) then
+            return texture
+        end
+    end
+    if item and type(item.GetIconTexture) == "function" then
+        local ok, region = pcall(item.GetIconTexture, item)
+        if ok and region and type(region.GetTexture) == "function" then
+            local ok2, texture = pcall(region.GetTexture, region)
+            if ok2 and texture and not addon:IsSecret(texture) and (not canaccessvalue or canaccessvalue(texture)) then
+                return texture
+            end
+        end
+    end
     return addon.Catalog:GetDisplayIcon(entry)
 end
 
 function Solo:SetSourceHidden(item, hidden)
-    if item and item.SetAlpha then item:SetAlpha(hidden and 0 or 1) end
+    if not item or not item.SetAlpha then return end
+    if self:IsNativeHosted(item) then
+        local display = self:GetNativeHostDisplay(item)
+        if display then self:UpdateNativeVisibility(display) end
+        return
+    end
+    item:SetAlpha(hidden and 0 or 1)
 end
 
 function Solo:EnsureDisplay(entry, item)
@@ -190,8 +214,19 @@ function Solo:SetEnabled(entry, enabled)
 
     local settings = addon:GetEntrySettings(entry.cooldownID, true)
     local item = addon.Runtime:GetLiveItem(entry.cooldownID)
-    settings.solo = enabled == true
+    local currentSpecID = addon:GetCurrentSpecID()
+    if not currentSpecID then return false, "Solo requires an active specialization." end
+    local specKey = tostring(currentSpecID)
+    if type(settings.soloSpecs) ~= "table" then
+        settings.soloSpecs = {}
+        if settings.soloSpecID ~= nil then
+            settings.soloSpecs[tostring(settings.soloSpecID)] = true
+            settings.soloSpecID = nil
+        end
+    end
     if enabled then
+        settings.soloSpecs[specKey] = true
+        settings.solo = true
         if settings.soloBlackBorder == nil then
             settings.soloBlackBorder = item and self:IsTrackedBarItem(item)
                 and false or Defaults.soloAppearance.blackBorder
@@ -211,6 +246,8 @@ function Solo:SetEnabled(entry, enabled)
             self:SyncFromItem(item)
         end
     else
+        settings.soloSpecs[specKey] = nil
+        settings.solo = next(settings.soloSpecs) ~= nil
         self:RemoveFromLinkGroup(entry)
         local display = self.displays[entry.cooldownID]
         local source = item or self.sources[entry.cooldownID]

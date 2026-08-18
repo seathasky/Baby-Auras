@@ -99,12 +99,10 @@ function GUI:RefreshEditor(message)
         entry.validTriggers[Enum.CooldownViewerAlertEventType.OnAuraApplied]
         or entry.validTriggers[Enum.CooldownViewerAlertEventType.OnAuraRemoved]
     )
-    if auraTriggers and entrySettings and entrySettings.solo == true then
+    if auraTriggers and addon.SoloUtilities.IsSoloEnabled(entry) then
         local display = addon.Solo.displays[entry.cooldownID]
-        if display and display.LiveCooldown then
-            timerStatus = "|cFF44FF77TIMER: LIVE|r"
-        elseif display and display.liveCooldownAttachFailed then
-            timerStatus = "|cFFFF5555TIMER: BLOCKED|r"
+        if display and display.NativeItem then
+            timerStatus = "|cFF44FF77TIMER: BLIZZARD CDM|r"
         else
             timerStatus = "|cFFFFCC44TIMER: PENDING|r"
         end
@@ -127,7 +125,7 @@ function GUI:RefreshEditor(message)
     frame.Solo:SetShown(soloEligible)
     frame.SoloLabel:SetShown(soloEligible)
     for _, element in ipairs(frame.SoloEligibilityElements or {}) do element:SetShown(soloEligible) end
-    frame.Solo:SetChecked(entrySettings and entrySettings.solo == true)
+    frame.Solo:SetChecked(addon.SoloUtilities.IsSoloEnabled(entry))
     frame.SoloOnTop:SetChecked(entrySettings and entrySettings.soloOnTop == true)
     frame.SoloSize:SetShown(soloEligible)
     frame.SoloSizeLabel:SetShown(soloEligible)

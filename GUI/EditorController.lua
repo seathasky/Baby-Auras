@@ -20,7 +20,7 @@ function GUI:UpdateIconLockButton()
     if not self.frame or not self.frame.IconLock then return end
     local locked = addon.Solo:AreIconsLocked()
     local button = self.frame.IconLock
-    button:SetText(locked and "ICONS LOCKED" or "ICONS UNLOCKED")
+    button:SetText("BABY EDIT MODE")
     SetButtonTextWhite(button)
     if locked then
         button:SetBackdropColor(0.025, 0.28, 0.10, 0.95)
@@ -34,7 +34,7 @@ end
 function GUI:ToggleIconLock()
     local locked = not addon.Solo:AreIconsLocked()
     if locked and self.previewMode then
-        self:SetStatus("Turn off Preview Mode before locking Solo icons.")
+        self:SetStatus("Turn off Preview Mode before leaving Baby Edit Mode.")
         return
     end
     -- The options frame may already be visible when this is clicked (notably
@@ -44,7 +44,7 @@ function GUI:ToggleIconLock()
         addon.Solo:SetGUIPositionMode(true)
     end
     addon.Solo:SetIconsLocked(locked)
-    self:SetStatus(locked and "Solo icons locked in place." or "Solo icons unlocked and movable.")
+    self:SetStatus(locked and "Baby Edit Mode closed." or "Baby Edit Mode opened; Solo icons are movable.")
 end
 
 function GUI:CommitEditor()
@@ -79,6 +79,22 @@ function GUI:CommitEditor()
 
     local settings = addon:GetTriggerSettings(self.selected.cooldownID, self.selectedTrigger, true)
     settings.enabled = triggerEnabled
+
+    -- Icon customization belongs to the Solo element, not to whether this
+    -- alert trigger is enabled. Save it on every editor commit so the live Solo
+    -- icon updates immediately even when the current trigger is disabled.
+    local entrySettings = addon:GetEntrySettings(self.selected.cooldownID, true)
+    entrySettings.customIconSpellID = customIconSpellID
+
+    -- Apply icon customization to the currently hosted Solo element immediately
+    -- instead of waiting for Blizzard to emit another CDM refresh.
+    if addon.Solo then
+        local display = addon.Solo.displays and addon.Solo.displays[self.selected.cooldownID]
+        if display then
+            addon.Solo:RefreshDisplay(display)
+        end
+    end
+
     if triggerEnabled then
         settings.zoom = self.frame.Zoom:GetChecked() == true
         settings.bounce = self.frame.Bounce:GetChecked() == true
@@ -98,9 +114,11 @@ function GUI:CommitEditor()
         settings.audioSound = self.selectedAudio
         settings.audioChannel = self.selectedAudioChannel or Defaults.trigger.audioChannel
 
-        local entrySettings = addon:GetEntrySettings(self.selected.cooldownID, true)
-        entrySettings.customIconSpellID = customIconSpellID
-        addon.Runtime:RefreshAppearances()
+    end
+    addon.Runtime:RefreshAppearances()
+    addon.Navigation:Refresh(self.selected.cooldownID)
+    if self.frame and self.frame.SelectedIcon then
+        self.frame.SelectedIcon:SetTexture(addon.Catalog:GetDisplayIcon(self.selected))
     end
     if not triggerEnabled or settings.glow ~= true then
         local item = addon.Runtime:GetLiveItem(self.selected.cooldownID)
@@ -229,8 +247,7 @@ function GUI:OnEnabledClicked()
     if self.refreshing then return end
     local disabling = self.frame.Enabled:GetChecked() ~= true
     local entry = self.selected
-    local entrySettings = entry and addon:GetEntrySettings(entry.cooldownID, false)
-    local soloEnabled = entrySettings and entrySettings.solo == true
+    local soloEnabled = entry and addon.SoloUtilities.IsSoloEnabled(entry)
     if not self:CommitEditor() then return end
     self:UpdateTriggerGate()
     if disabling and soloEnabled then

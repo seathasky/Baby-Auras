@@ -110,6 +110,18 @@ function Runtime:HookItem(item)
         end)
     end
 
+    -- Blizzard can reapply its own rounded border/mask while applications,
+    -- charges, or border state refresh. Queue a deferred presentation refresh so
+    -- BabyAuras' skin remains stable without modifying secret cooldown/aura data
+    -- from inside Blizzard's execution path.
+    for _, method in ipairs({ "RefreshIconBorder", "RefreshApplications", "RefreshSpellChargeInfo" }) do
+        if type(item[method]) == "function" then
+            hooksecurefunc(item, method, function(frame)
+                addon.Runtime:QueueItemRefresh(frame, true)
+            end)
+        end
+    end
+
     if type(item.OnActiveStateChanged) == "function" then
         hooksecurefunc(item, "OnActiveStateChanged", function(frame)
             addon.Runtime:QueueItemRefresh(frame, true)
@@ -255,6 +267,11 @@ function Runtime:Install()
                 if type(viewer.RefreshLayout) == "function" then
                     hooksecurefunc(viewer, "RefreshLayout", function()
                         addon.Runtime:ScheduleCDMRefresh()
+                    end)
+                end
+                if type(viewer.Layout) == "function" then
+                    hooksecurefunc(viewer, "Layout", function(frame)
+                        if addon.Solo then addon.Solo:RepositionHostedViewer(frame) end
                     end)
                 end
             end

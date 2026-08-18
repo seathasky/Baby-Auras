@@ -37,10 +37,14 @@ function addon:TryMethod(object, methodName)
     return pcall(object[methodName], object)
 end
 
+function addon:GetCurrentSpecID()
+    local specIndex = GetSpecialization and GetSpecialization()
+    return specIndex and GetSpecializationInfo(specIndex) or nil
+end
+
 function addon:GetProfile()
     local classID = select(3, UnitClass("player")) or 0
-    local specIndex = GetSpecialization()
-    local specID = specIndex and GetSpecializationInfo(specIndex) or 0
+    local specID = self:GetCurrentSpecID() or 0
     local classKey = tostring(classID)
 
     if not BabyAurasDB.profiles[classKey] then
