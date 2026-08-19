@@ -38,6 +38,7 @@ function Effects:CacheVoice()
 end
 
 function Effects:Speak(text, rate, volume)
+    if BabyAurasDB and BabyAurasDB.muteAllAudio == true then return false end
     if not text or text == "" then return false end
     if C_VoiceChat and C_VoiceChat.SpeakText then
         if not self.voice then self:CacheVoice() end

@@ -6,6 +6,7 @@ local Defaults = {
         guiScale = 85,
         fadeWhenUnfocused = false,
         fadeOpacity = 60,
+        muteAllAudio = false,
         snapEnabled = true,
         snapSpacing = 1,
         hideSoloTooltips = false,
@@ -145,6 +146,7 @@ function Defaults:InitializeDatabase(database)
     database.guiScale = Clamp(math.floor(((tonumber(database.guiScale) or self.database.guiScale) + 2.5) / 5) * 5, 70, 130)
     database.fadeOpacity = Clamp(tonumber(database.fadeOpacity) or self.database.fadeOpacity, 10, 90)
     database.fadeWhenUnfocused = database.fadeWhenUnfocused == true
+    database.muteAllAudio = database.muteAllAudio == true
     database.snapEnabled = database.snapEnabled ~= false
     database.snapSpacing = Clamp(math.floor(tonumber(database.snapSpacing) or self.database.snapSpacing), 0, 10)
     database.hideSoloTooltips = database.hideSoloTooltips == true

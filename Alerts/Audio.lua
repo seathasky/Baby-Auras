@@ -133,7 +133,12 @@ function Audio:GetChannelName(channel)
     return "Master"
 end
 
+function Audio:IsMuted()
+    return BabyAurasDB and BabyAurasDB.muteAllAudio == true
+end
+
 function Audio:Play(soundEnum, channel)
+    if self:IsMuted() then return false end
     channel = self:GetChannelName(channel) ~= "Master" and channel or "Master"
     if type(soundEnum) == "string" then
         local sound = GetCustomSound(soundEnum)

@@ -384,7 +384,7 @@ function GUI:Create()
     settingsDimmer:Hide()
 
     settingsPopup = CreateFrame("Frame", "BabyAurasSettingsPopup", frame, "BackdropTemplate")
-    settingsPopup:SetSize(250, 282)
+    settingsPopup:SetSize(250, 312)
     settingsPopup:SetPoint("BOTTOMLEFT", settingsButton, "TOPLEFT", 0, 6)
     settingsPopup:SetFrameLevel(frame:GetFrameLevel() + 30)
     ApplyBackdrop(settingsPopup)
@@ -478,9 +478,17 @@ function GUI:Create()
     minimapOption:SetScript("OnClick", function(self) GUI:SetMinimapHidden(self:GetChecked()) end)
     frame.HideMinimap = minimapOption
 
+    local muteOption, muteOptionLabel = CreateCheckbox(settingsPopup, "Mute all audio", 125)
+    muteOption:SetSize(20, 20)
+    muteOption:SetPoint("TOPLEFT", minimapOption, "BOTTOMLEFT", 0, -7)
+    muteOptionLabel:SetFontObject(GameFontHighlightSmall)
+    muteOption:SetChecked(BabyAurasDB.muteAllAudio == true)
+    muteOption:SetScript("OnClick", function(self) GUI:SetMuteAllAudio(self:GetChecked()) end)
+    frame.MuteAllAudio = muteOption
+
     local resetTutorialArrow = CreateFrame("Button", nil, settingsPopup, "UIPanelButtonTemplate")
     resetTutorialArrow:SetSize(190, 24)
-    resetTutorialArrow:SetPoint("TOPLEFT", minimapOption, "BOTTOMLEFT", 0, -12)
+    resetTutorialArrow:SetPoint("TOPLEFT", muteOption, "BOTTOMLEFT", 0, -12)
     resetTutorialArrow:SetText("Reset Tutorial Arrow")
     SetButtonTextWhite(resetTutorialArrow)
     resetTutorialArrow:SetScript("OnClick", function()
@@ -642,7 +650,7 @@ function GUI:Create()
     enablePanel:SetSize(335, 42)
     ApplyBackdrop(enablePanel)
     frame.EnablePanel = enablePanel
-    local enabled, enabledLabel = CreateCheckbox(enablePanel, "ENABLE THIS TRIGGER", 245)
+    local enabled, enabledLabel = CreateCheckbox(enablePanel, "ENABLE ALERTS", 245)
     enabled:SetPoint("LEFT", 8, 0)
     enabled:SetSize(30, 30)
     enabledLabel:SetFontObject(GameFontNormalLarge)
@@ -704,12 +712,9 @@ function GUI:Create()
     local soloHotkeyColor, soloBarTextColor = themeSection.hotkeyColor, themeSection.barTextColor
     local resetSoloTextColors = themeSection.reset
 
-    -- Trigger, alert, audio, and icon-customization section construction.
-    local triggerSection = addon.GUISections.Trigger:Build(editor, frame)
-    local triggerLabel, trigger = triggerSection.label, triggerSection.button
-    local triggerHint = triggerSection.hint
-
-    local alertsSection = addon.GUISections.Alerts:Build(editor, trigger, frame)
+    -- One page per spell: alert effects are configured directly, without
+    -- event-selector sub-pages.
+    local alertsSection = addon.GUISections.Alerts:Build(editor, enablePanel, frame)
     local effectsTitle, effectsLine, effectsToggle = alertsSection.title, alertsSection.line, alertsSection.toggle
     local glow, glowLabel = alertsSection.glow, alertsSection.glowLabel
     local zoom, zoomLabel = alertsSection.zoom, alertsSection.zoomLabel
@@ -738,63 +743,30 @@ function GUI:Create()
     local iconToggle = iconSection.toggle
 
     -- Shared section descriptors, backgrounds, and collapse controls.
-    frame.EditorSections = {}
-    frame.EditorSections[1] = triggerSection.descriptor
-    frame.EditorSections[2] = displaySection.descriptor
-    frame.EditorSections[3] = themeSection.descriptor
-    frame.EditorSections[4] = alertsSection.descriptor
-    frame.EditorSections[5] = audioSection.descriptor
-    frame.EditorSections[6] = iconSection.descriptor
-    for index = 2, #frame.EditorSections do
+    frame.EditorSections = {
+        displaySection.descriptor,
+        themeSection.descriptor,
+        alertsSection.descriptor,
+        audioSection.descriptor,
+        iconSection.descriptor,
+    }
+    for index = 1, #frame.EditorSections do
         frame.EditorSections[index].background = CreateSectionBackground(editor)
     end
     frame.SectionToggles = { displayToggle, themeToggle, effectsToggle, voiceToggle, iconToggle }
 
-    -- Controls and labels disabled when the selected trigger is unavailable.
+    -- Enable Alerts affects only alert effects and voice/audio. Solo display,
+    -- theme, positioning, and icon customization remain independent.
     frame.TriggerGateControls = {
-        solo, soloOnTop, soloSize, soloCrop, soloCropAmount, soloBar.icon, soloBar.width, soloBar.height, soloBar.text, soloBar.match,
-        soloShowSwipe, soloShowNumbers, soloKeepColored, soloClassSwipe, soloActiveBorder,
-        soloAlwaysShow, soloDesaturateInactive, soloShowStacks, soloOpacity, soloStackSize, soloCooldownSize,
-        stackX, stackY, cooldownX, cooldownY, soloHotkey, soloHotkeySize, hotkeyX, hotkeyY,
-        soloBlackBorder, soloBorderSize, soloBarTheme.color, soloBarTheme.progress,
-        soloFont, soloStackColor, soloCooldownColor, soloHotkeyColor, soloBarTextColor,
-        resetSoloTextColors,
         glow, zoom, bounce, glowStyle, duration, bounceDuration, glowColor, frame.ResetAlertEffects,
-        tts, textBox, speechRate, ttsVolume,
-        audio, audioDropdown, audioPreview, audioChannel, iconSpellID, prismaticIcon,
+        tts, textBox, speechRate, ttsVolume, audio, audioDropdown, audioPreview, audioChannel,
     }
     frame.TriggerGateElements = {
-        displayTitle, displayLine, soloPanel, solo, soloLabel, soloOnTop, soloOnTopLabel, soloSize, soloSizeLabel, soloSizeValue,
-        soloCrop, soloCropLabel, soloCropAmount, soloCropValue,
-        soloBar.iconLabel, soloBar.icon, soloBar.iconValue,
-        soloBar.widthLabel, soloBar.width, soloBar.widthValue,
-        soloBar.heightLabel, soloBar.height, soloBar.heightValue,
-        soloBar.textLabel, soloBar.text, soloBar.textValue,
-        soloBar.match, soloBar.matchLabel,
-        soloShowSwipe, soloShowSwipeLabel, soloShowNumbers, soloShowNumbersLabel,
-        soloKeepColored, soloKeepColoredLabel, soloClassSwipe, soloClassSwipeLabel,
-        soloActiveBorder, soloActiveBorderLabel, soloAlwaysShow, soloAlwaysShowLabel,
-        soloDesaturateInactive, soloDesaturateInactiveLabel, soloShowStacks, soloShowStacksLabel,
-        soloOpacity, soloOpacityLabel, soloOpacityValue,
-        soloStackSizeLabel, soloStackSize, soloStackSizeValue,
-        soloCooldownSizeLabel, soloCooldownSize, soloCooldownSizeValue,
-        stackPositionLabel, stackXLabel, stackX, stackYLabel, stackY,
-        cooldownPositionLabel, cooldownXLabel, cooldownX, cooldownYLabel, cooldownY,
-        soloHotkeyLabel, soloHotkey, soloHotkeySizeLabel, soloHotkeySize, soloHotkeySizeValue,
-        hotkeyPositionLabel, hotkeyXLabel, hotkeyX, hotkeyYLabel, hotkeyY,
-        themeTitle, themeLine,
-        soloBlackBorder, soloBlackBorderLabel, soloBorderSize, soloBorderSizeValue,
-        soloBarTheme.color, soloBarTheme.progress, soloFontLabel, soloFont,
-        soloTextColorsLabel, soloStackColor, soloCooldownColor, soloHotkeyColor, soloBarTextColor,
-        resetSoloTextColors, triggerLabel,
-        effectsTitle, effectsLine,
-        glow, glowLabel, zoom, zoomLabel, bounce, bounceLabel, glowStyleLabel, glowStyle,
-        durationLabel, duration, durationHint, bounceDurationLabel, bounceDuration,
-        bounceDurationHint, glowColor,
-        frame.ResetAlertEffects,
-        voiceTitle, voiceLine, tts, ttsLabel, textLabel, textBox, speechRateLabel, speechRate, rateHint, ttsVolume, ttsVolumeValue,
-        audio, audioLabel, audioDropdown, audioPreview, audioChannel, iconTitle, iconLine, iconLabel, iconSpellID,
-        prismaticIcon, prismaticIconLabel, autoSave,
+        effectsTitle, effectsLine, glow, glowLabel, zoom, zoomLabel, bounce, bounceLabel,
+        glowStyleLabel, glowStyle, durationLabel, duration, durationHint,
+        bounceDurationLabel, bounceDuration, bounceDurationHint, glowColor, frame.ResetAlertEffects,
+        voiceTitle, voiceLine, tts, ttsLabel, textLabel, textBox, speechRateLabel, speechRate, rateHint,
+        ttsVolume, ttsVolumeValue, audio, audioLabel, audioDropdown, audioPreview, audioChannel,
     }
     for _, control in ipairs(frame.GlowTuningControls) do
         frame.TriggerGateControls[#frame.TriggerGateControls + 1] = control

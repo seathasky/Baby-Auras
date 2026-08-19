@@ -72,6 +72,7 @@ end
 function Runtime:Dispatch(item, trigger)
     local entry = self.itemEntries[item]
     if not entry then return end
+    if trigger ~= addon:GetPrimaryTrigger(entry) then return end
     if addon.NativeCooldownTriggers
         and addon.NativeCooldownTriggers:IsManagedTrigger(entry, trigger) then
         if trigger == Enum.CooldownViewerAlertEventType.ChargeGained then

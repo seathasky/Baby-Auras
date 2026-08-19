@@ -87,25 +87,10 @@ Tutorial.steps = {
         iconEmphasis = true,
     },
     {
-        title = "Enable this trigger",
-        text = "Each element can react to one or more Blizzard Cooldown Manager events. This master checkbox enables the currently selected event. Disabling it does not silently delete a Solo icon; you will be asked first.",
+        title = "Enable alerts",
+        text = "Each spell or aura has one Baby Auras settings page. Enable Alerts turns its configured glow, motion, TTS, and audio alerts on or off. Solo display, styling, positioning, and icon customization remain independent.",
         target = function() return addon.GUI.frame.EnablePanel end,
         editorScroll = true,
-    },
-    {
-        title = "Choose the trigger event",
-        text = "Trigger Event stays at the top and is always visible. These buttons select when the alert fires. Aura Gained and Aura Lost are used by buffs and procs. Cooldowns can offer Ready, Started, Charge Gained, or Pandemic Window depending on what Blizzard exposes for that element.",
-        target = function()
-            local f = addon.GUI.frame
-            local targets = { f.TriggerLabel }
-            for _, button in ipairs(f.EventTriggerButtons or {}) do
-                if button:IsShown() then targets[#targets + 1] = button end
-            end
-            if #targets == 1 then targets[#targets + 1] = f.Trigger end
-            return targets
-        end,
-        editorScroll = true,
-        fullEditorWidth = true,
     },
     {
         title = "Solo icon display",
@@ -162,7 +147,7 @@ Tutorial.steps = {
     {
         title = "Visual alert effects",
         sectionKey = "effects",
-        text = "Glow Alert flashes the icon when this event fires. Choose Blizzard Proc, Pixel Glow, or Extended Glow, then set its duration. Pixel and Extended support a custom color plus Count, Speed, Thickness, and Padding controls. While Preview Mode is ON, these controls update the held glow live without replaying its sound. Tracked bars support Pixel and Extended; other icon categories can also use Blizzard Proc.",
+        text = "Glow Alert flashes the icon when the spell's alert fires. Choose Blizzard Proc, Pixel Glow, or Extended Glow, then set its duration. Pixel and Extended support a custom color plus Count, Speed, Thickness, and Padding controls. While Preview Mode is ON, these controls update the held glow live without replaying its sound. Tracked bars support Pixel and Extended; other icon categories can also use Blizzard Proc.",
         target = function()
             local f = addon.GUI.frame
             return Frames(f.EffectsTitle, f.Glow, f.GlowStyle, f.Duration, f.GlowColor,
@@ -196,7 +181,7 @@ Tutorial.steps = {
     },
     {
         title = "Preview everything",
-        text = "Preview Mode is the combined test toggle. Turning it ON unlocks Solo icons, shows each enabled stack, cooldown, and hotkey label, plays the configured TTS or audio once, and holds the selected glow for inspection. Changes to glow controls update live without replaying sound. It stays on while you switch icons or triggers. Click Preview Mode again, or close Baby Auras, to clear the preview and lock the icons.",
+        text = "Preview Mode is the combined test toggle. Turning it ON unlocks Solo icons, shows each enabled stack, cooldown, and hotkey label, plays the configured TTS or audio once, and holds the selected glow for inspection. Changes to glow controls update live without replaying sound. It stays on while you switch icons. Click Preview Mode again, or close Baby Auras, to clear the preview and lock the icons.",
         target = function() return addon.GUI.frame.Test end,
     },
     {

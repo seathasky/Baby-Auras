@@ -41,7 +41,7 @@ function GUI:OnGlowTuningChanged(settingKey, value, valueLabel, suffix)
     local settings = addon:GetTriggerSettings(self.selected.cooldownID, self.selectedTrigger, true)
     settings[settingKey] = value
     self:RefreshHeldTestGlow()
-    self:SetStatus("Glow tuning saved automatically for this trigger.")
+    self:SetStatus("Glow tuning saved automatically for this spell.")
 end
 
 function GUI:RefreshGlowTuningControls(settings)
@@ -130,7 +130,7 @@ function GUI:OpenGlowColor()
         ColorPickerFrame:SetColorRGB(original[1], original[2], original[3])
         ColorPickerFrame:Show()
     end
-    self:SetStatus("Glow color saves automatically for this trigger.")
+    self:SetStatus("Glow color saves automatically for this spell.")
 end
 
 function GUI:ResetGlowColor()

@@ -85,10 +85,12 @@ function Tutorial:StartCelebration()
     self:StopCelebration()
     self:CreateConfettiParticles()
 
-    local played, handle = PlaySoundFile(
-        "Interface\\AddOns\\BabyAuras\\Media\\Sounds\\ap.mp3", "Master"
-    )
-    if played then self.celebrationSoundHandle = handle end
+    if not (BabyAurasDB and BabyAurasDB.muteAllAudio == true) then
+        local played, handle = PlaySoundFile(
+            "Interface\\AddOns\\BabyAuras\\Media\\Sounds\\ap.mp3", "Master"
+        )
+        if played then self.celebrationSoundHandle = handle end
+    end
 
     local width, height = UIParent:GetWidth(), UIParent:GetHeight()
     self.confettiElapsed = 0

@@ -6,15 +6,6 @@ local GetSavedColor = addon.GUIWidgets.GetSavedColor
 local SetColorButtonColor = addon.GUIWidgets.SetColorButtonColor
 local SetButtonTextWhite = addon.GUIWidgets.SetButtonTextWhite
 
-local TriggerButtonNames = {
-    [Enum.CooldownViewerAlertEventType.Available] = "Ready",
-    [Enum.CooldownViewerAlertEventType.OnCooldown] = "Started",
-    [Enum.CooldownViewerAlertEventType.ChargeGained] = "Charge Gained",
-    [Enum.CooldownViewerAlertEventType.OnAuraApplied] = "Aura Gained",
-    [Enum.CooldownViewerAlertEventType.OnAuraRemoved] = "Aura Lost",
-    [Enum.CooldownViewerAlertEventType.PandemicTime] = "Pandemic",
-}
-
 local function FitSelectedName(frame, text)
     local label = frame.SelectedName
     local font = frame.SelectedNameFont
@@ -91,8 +82,7 @@ function GUI:RefreshEditor(message)
     self:ResetEditorSectionVisibility()
 
     frame.SelectedIcon:SetTexture(addon.Catalog:GetDisplayIcon(entry))
-    local triggerName = self.selectedTrigger and addon.TriggerNames[self.selectedTrigger]
-    FitSelectedName(frame, entry.name .. (triggerName and " (" .. triggerName .. ")" or ""))
+    FitSelectedName(frame, entry.name)
     local entrySettings = addon:GetEntrySettings(entry.cooldownID, false)
     local timerStatus = ""
     local auraTriggers = entry.validTriggers and (
@@ -214,10 +204,6 @@ function GUI:RefreshEditor(message)
     SetColorButtonColor(frame.SoloHotkeyColor, GetSavedColor(entrySettings, "soloHotkeyColor", "hotkeyColor"))
 
     if not self.selectedTrigger then
-        frame.Trigger:SetText("No supported triggers")
-        frame.Trigger:Show()
-        frame.TriggerHint:Show()
-        for _, button in ipairs(frame.EventTriggerButtons) do button:Hide() end
         frame.Enabled:SetChecked(false)
         frame.Glow:SetChecked(false)
         frame.TTS:SetChecked(false)
@@ -225,37 +211,13 @@ function GUI:RefreshEditor(message)
         frame.TextBox:SetText("")
         frame.SpeechRate:SetText("0")
         self:UpdateTriggerGate()
+        frame.Message:SetText(message or "This CDM element does not expose a Baby Auras alert event. Display settings remain available.")
         self.refreshing = false
+        self:ApplyEditorSectionLayout()
         return
     end
 
     local settings = addon:GetTriggerSettings(entry.cooldownID, self.selectedTrigger, false)
-    local availableTriggers = self:GetAvailableTriggers(entry)
-    frame.Trigger:Hide()
-    frame.TriggerHint:Hide()
-    local buttonCount = #availableTriggers
-    local gap = 6
-    local rowWidth = 335
-    local buttonWidth = (rowWidth - (gap * math.max(0, buttonCount - 1))) / math.max(1, buttonCount)
-    for index, button in ipairs(frame.EventTriggerButtons) do
-        local trigger = availableTriggers[index]
-        button:SetShown(trigger ~= nil)
-        if trigger then
-            button.trigger = trigger
-            button:ClearAllPoints()
-            if index == 1 then
-                button:SetPoint("TOPLEFT", frame.Trigger)
-            else
-                button:SetPoint("LEFT", frame.EventTriggerButtons[index - 1], "RIGHT", gap, 0)
-            end
-            button:SetSize(buttonWidth, 26)
-            button:SetText(TriggerButtonNames[trigger] or addon.TriggerNames[trigger] or tostring(trigger))
-            button:GetFontString():SetFontObject(buttonCount >= 3 and GameFontNormalSmall or GameFontNormal)
-            local selected = trigger == self.selectedTrigger
-            button:SetAlpha(selected and 1 or 0.72)
-            button:GetFontString():SetTextColor(1, 1, 1)
-        end
-    end
     frame.Enabled:SetChecked(settings and settings.enabled or false)
     frame.Zoom:SetChecked(settings and settings.zoom == true or false)
     frame.Bounce:SetChecked(settings and settings.bounce == true or false)
@@ -272,7 +234,7 @@ function GUI:RefreshEditor(message)
     self:RefreshGlowTuningControls(settings)
     frame.Duration:SetText(tostring(settings and settings.glowDuration or Defaults.trigger.glowDuration))
     frame.BounceDuration:SetText(tostring(settings and settings.bounceDuration or Defaults.trigger.bounceDuration))
-    frame.TextBox:SetText(settings and settings.text or (entry.name .. " " .. (addon.TriggerNames[self.selectedTrigger] or "")))
+    frame.TextBox:SetText(settings and settings.text or entry.name)
     frame.SpeechRate:SetText(tostring(settings and settings.speechRate or Defaults.trigger.speechRate))
     frame.TTSVolume:SetValue(settings and settings.ttsVolume or Defaults.trigger.ttsVolume)
     local ttsEnabled = settings and settings.ttsEnabled == true or Defaults.trigger.ttsEnabled

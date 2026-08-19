@@ -38,6 +38,18 @@ function GUI:SetMinimapHidden(hidden)
     end
 end
 
+function GUI:SetMuteAllAudio(muted)
+    BabyAurasDB.muteAllAudio = muted == true
+    if self.frame and self.frame.MuteAllAudio then
+        self.frame.MuteAllAudio:SetChecked(BabyAurasDB.muteAllAudio)
+    end
+    if self.SetStatus then
+        self:SetStatus(BabyAurasDB.muteAllAudio
+            and "All Baby Auras audio muted."
+            or "Baby Auras audio resumed.")
+    end
+end
+
 function GUI:ConfirmResetAllSettings()
     StaticPopupDialogs.BABY_AURAS_RESET_ALL_SETTINGS = {
         text = "|cFFFF2020ARE YOU SURE?|r\n\n|cFFFF4040This resets ALL Baby Auras settings.|r\n\nEvery class profile, trigger, Solo layout, color, sound, GUI preference, and saved position will be erased. This cannot be undone.",

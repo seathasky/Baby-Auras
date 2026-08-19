@@ -5,11 +5,8 @@ local Defaults = addon.Defaults
 local SetButtonTextWhite = addon.GUIWidgets.SetButtonTextWhite
 
 function GUI:GetAvailableTriggers(entry)
-    local triggers = {}
-    for _, trigger in ipairs(addon.TriggerOrder) do
-        if entry.validTriggers[trigger] then triggers[#triggers + 1] = trigger end
-    end
-    return triggers
+    local trigger = addon:GetPrimaryTrigger(entry)
+    return trigger and { trigger } or {}
 end
 
 function GUI:SetStatus(message)
@@ -48,8 +45,9 @@ function GUI:ToggleIconLock()
 end
 
 function GUI:CommitEditor()
-    if self.refreshing or not self.selected or not self.selectedTrigger then return false end
-    local triggerEnabled = self.frame.Enabled:GetChecked() == true
+    if self.refreshing or not self.selected then return false end
+    local triggerSupported = self.selectedTrigger ~= nil
+    local triggerEnabled = triggerSupported and self.frame.Enabled:GetChecked() == true
     local speechRate = tonumber(self.frame.SpeechRate:GetText())
     local ttsEnabled = self.frame.TTS:GetChecked() == true
     if triggerEnabled and ttsEnabled and (not speechRate or speechRate < -10 or speechRate > 10) then
@@ -72,13 +70,14 @@ function GUI:CommitEditor()
     end
 
     local customIconSpellID = tonumber(self.frame.IconSpellID:GetText())
-    if triggerEnabled and customIconSpellID and not C_Spell.GetSpellTexture(customIconSpellID) then
+    if customIconSpellID and not C_Spell.GetSpellTexture(customIconSpellID) then
         self:SetStatus("That custom icon spell ID is not valid.")
         return false
     end
 
-    local settings = addon:GetTriggerSettings(self.selected.cooldownID, self.selectedTrigger, true)
-    settings.enabled = triggerEnabled
+    local settings = triggerSupported
+        and addon:GetTriggerSettings(self.selected.cooldownID, self.selectedTrigger, true) or nil
+    if settings then settings.enabled = triggerEnabled end
 
     -- Icon customization belongs to the Solo element, not to whether this
     -- alert trigger is enabled. Save it on every editor commit so the live Solo
@@ -95,7 +94,7 @@ function GUI:CommitEditor()
         end
     end
 
-    if triggerEnabled then
+    if triggerEnabled and settings then
         settings.zoom = self.frame.Zoom:GetChecked() == true
         settings.bounce = self.frame.Bounce:GetChecked() == true
         settings.bounceDuration = bounceDuration or Defaults.trigger.bounceDuration
@@ -120,7 +119,7 @@ function GUI:CommitEditor()
     if self.frame and self.frame.SelectedIcon then
         self.frame.SelectedIcon:SetTexture(addon.Catalog:GetDisplayIcon(self.selected))
     end
-    if not triggerEnabled or settings.glow ~= true then
+    if not triggerEnabled or not settings or settings.glow ~= true then
         local item = addon.Runtime:GetLiveItem(self.selected.cooldownID)
         if item then addon.Effects:HideGlow(item) end
     end
@@ -149,7 +148,7 @@ function GUI:Select(entry)
     if previewActive then self:ClearPreviewSelection() else self:StopTestGlow(true) end
     self:CommitEditor()
     self.selected = entry
-    self.selectedTrigger = self:GetAvailableTriggers(entry)[1]
+    self.selectedTrigger = addon:GetPrimaryTrigger(entry)
     self:RefreshEditor()
     if editorScroll then
         editorScroll:SetVerticalScroll(Clamp(scrollOffset, 0, editorScroll:GetVerticalScrollRange()))
@@ -175,29 +174,11 @@ function GUI:OpenEntry(entry)
 end
 
 function GUI:CycleTrigger()
-    if not self.selected then return end
-    if not self:CommitEditor() then return end
-    local triggers = self:GetAvailableTriggers(self.selected)
-    if #triggers == 0 then return end
-    local nextIndex = 1
-    for index, trigger in ipairs(triggers) do
-        if trigger == self.selectedTrigger then nextIndex = index + 1 break end
-    end
-    if nextIndex > #triggers then nextIndex = 1 end
-    if self.previewMode then self:ClearPreviewSelection() end
-    self.selectedTrigger = triggers[nextIndex]
-    self:RefreshEditor()
-    if self.previewMode then self:RefreshPreviewSelection() end
+    -- Event sub-pages were removed; each spell has one settings page.
 end
 
-function GUI:SelectTrigger(trigger)
-    if not self.selected or trigger == self.selectedTrigger
-        or not self.selected.validTriggers[trigger] then return end
-    if not self:CommitEditor() then return end
-    if self.previewMode then self:ClearPreviewSelection() end
-    self.selectedTrigger = trigger
-    self:RefreshEditor()
-    if self.previewMode then self:RefreshPreviewSelection() end
+function GUI:SelectTrigger()
+    -- Compatibility no-op for stale callbacks from older UI instances.
 end
 
 function GUI:OnPrismaticIconClicked()
@@ -232,7 +213,7 @@ function GUI:UpdateTriggerGate()
     else
         self.frame.EnabledLabel:ClearAllPoints()
         self.frame.EnabledLabel:SetPoint("LEFT", self.frame.Enabled, "RIGHT", 2, 0)
-        self.frame.EnabledLabel:SetText("ENABLE THIS TRIGGER")
+        self.frame.EnabledLabel:SetText("ENABLE ALERTS")
         self.frame.EnabledLabel:SetTextColor(enabled and 0.25 or 1, enabled and 1 or 0.82, enabled and 0.3 or 0.05, 1)
         self.frame.EnablePanel:SetBackdropBorderColor(enabled and 0.2 or 1, enabled and 0.8 or 0.72, enabled and 0.25 or 0.05, 1)
         self.frame.EnablePanel:SetBackdropColor(enabled and 0.03 or 0.12, enabled and 0.12 or 0.07, enabled and 0.04 or 0.01, 0.95)

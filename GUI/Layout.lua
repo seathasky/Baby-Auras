@@ -4,7 +4,6 @@ local GUI = addon.GUI
 local SetButtonTextWhite = addon.GUIWidgets.SetButtonTextWhite
 
 function GUI:IsEditorSectionCollapsed(sectionKey)
-    if sectionKey == "trigger" then return false end
     if self.temporaryExpandedSections and self.temporaryExpandedSections[sectionKey] then return false end
     local sections = BabyAurasDB and BabyAurasDB.editorCollapsedSections
     if sections and sections[sectionKey] ~= nil then return sections[sectionKey] == true end
@@ -14,7 +13,7 @@ end
 function GUI:AreAllEditorSectionsCollapsed()
     if not self.selected or not self.frame or not self.frame.EditorSections then return true end
     for _, section in ipairs(self.frame.EditorSections) do
-        if section.key ~= "trigger" and not self:IsEditorSectionCollapsed(section.key) then return false end
+        if not self:IsEditorSectionCollapsed(section.key) then return false end
     end
     return true
 end
@@ -35,12 +34,10 @@ function GUI:ToggleAllEditorSections()
     BabyAurasDB.editorCollapsedSections = type(BabyAurasDB.editorCollapsedSections) == "table"
         and BabyAurasDB.editorCollapsedSections or {}
     for _, section in ipairs(self.frame.EditorSections) do
-        if section.key ~= "trigger" then
-            BabyAurasDB.editorCollapsedSections[section.key] = collapse
-            if self.temporaryExpandedSections then self.temporaryExpandedSections[section.key] = nil end
-            if not collapse then
-                for _, element in ipairs(section.elements) do element:Show() end
-            end
+        BabyAurasDB.editorCollapsedSections[section.key] = collapse
+        if self.temporaryExpandedSections then self.temporaryExpandedSections[section.key] = nil end
+        if not collapse then
+            for _, element in ipairs(section.elements) do element:Show() end
         end
     end
     self:RefreshEditor()
@@ -115,7 +112,7 @@ function GUI:ResetEditorSectionVisibility()
     BabyAurasDB.editorCollapsedSections = type(BabyAurasDB.editorCollapsedSections) == "table"
         and BabyAurasDB.editorCollapsedSections or {}
     for _, section in ipairs(frame.EditorSections) do
-        if section.key ~= "trigger" and BabyAurasDB.editorCollapsedSections[section.key] == nil then
+        if BabyAurasDB.editorCollapsedSections[section.key] == nil then
             BabyAurasDB.editorCollapsedSections[section.key] = true
         end
     end

@@ -22,7 +22,7 @@ function Display:Build(editor, frame)
     local GUI = addon.GUI
     local controls = {}
     local title, line = Widgets.CreateSectionTitle(editor, "DISPLAY")
-    title:SetPoint("TOPLEFT", 0, -108)
+    title:SetPoint("TOPLEFT", 0, -130)
     frame.DisplayTitle = title
 
     local panel = CreateFrame("Frame", nil, editor, "BackdropTemplate")

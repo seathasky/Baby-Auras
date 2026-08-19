@@ -57,6 +57,7 @@ local function GetTriggerSettings(entry, trigger)
 end
 
 local function IsTriggerEnabled(entry, trigger)
+    if not entry or trigger ~= addon:GetPrimaryTrigger(entry) then return false, nil end
     local settings = GetTriggerSettings(entry, trigger)
     return settings and settings.enabled == true, settings
 end

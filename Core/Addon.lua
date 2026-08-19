@@ -26,6 +26,17 @@ addon.TriggerNames = {
     [Enum.CooldownViewerAlertEventType.PandemicTime] = "Pandemic Window",
 }
 
+-- One configuration page per Cooldown Manager element. Blizzard still exposes
+-- several alert event variants internally; Baby Auras deterministically uses
+-- the same first supported event older versions selected by default.
+function addon:GetPrimaryTrigger(entry)
+    if not entry or type(entry.validTriggers) ~= "table" then return nil end
+    for _, trigger in ipairs(self.TriggerOrder) do
+        if entry.validTriggers[trigger] then return trigger end
+    end
+    return nil
+end
+
 function addon:IsSecret(value)
     return issecretvalue and issecretvalue(value) or false
 end
