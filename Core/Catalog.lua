@@ -3,17 +3,24 @@ local _, addon = ...
 addon.Catalog = { entries = {}, byCooldownID = {} }
 local Catalog = addon.Catalog
 
-local categories = {
-    Enum.CooldownViewerCategory.Essential,
-    Enum.CooldownViewerCategory.Utility,
-    Enum.CooldownViewerCategory.TrackedBuff,
-    Enum.CooldownViewerCategory.TrackedBar,
-    Enum.CooldownViewerCategory.GroupBuff,
-    Enum.CooldownViewerCategory.SpecAgnosticEssential,
-    Enum.CooldownViewerCategory.SpecAgnosticTracked,
-    Enum.CooldownViewerCategory.EquipSlotEssential,
-    Enum.CooldownViewerCategory.EquipSlotTracked,
-}
+local categories, seenCategories = {}, {}
+local function AddCategory(category)
+    if category ~= nil and not seenCategories[category] then
+        seenCategories[category] = true
+        categories[#categories + 1] = category
+    end
+end
+
+local Category = Enum.CooldownViewerCategory
+AddCategory(Category.Essential)
+AddCategory(Category.Utility)
+AddCategory(Category.TrackedBuff)
+AddCategory(Category.TrackedBar)
+AddCategory(Category.GroupBuff)
+AddCategory(Category.SpecAgnosticEssential)
+AddCategory(Category.SpecAgnosticTracked)
+AddCategory(Category.EquipSlotEssential)
+AddCategory(Category.EquipSlotTracked)
 
 local displayOverridesByCooldownID = {
     [198408] = { spellID = 1295924, name = "Prismatic Bolt", realIcon = 8026694 },

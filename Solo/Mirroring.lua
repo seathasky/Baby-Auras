@@ -368,19 +368,6 @@ function Solo:RepositionHostedViewer(viewer)
     end
 end
 
-function Solo:QueueItemSync(item)
-    if not item then return end
-    self.pendingItemSyncs = self.pendingItemSyncs or setmetatable({}, { __mode = "k" })
-    if self.pendingItemSyncs[item] then return end
-    self.pendingItemSyncs[item] = true
-    C_Timer.After(0, function()
-        Solo.pendingItemSyncs[item] = nil
-        if addon.Runtime and addon.Runtime.itemEntries[item] then
-            Solo:SyncFromItem(item)
-        end
-    end)
-end
-
 function Solo:UpdateActiveState(item, display)
     if not item or not display then return end
     local active
@@ -416,13 +403,6 @@ function Solo:SyncCooldown(item, display)
     end
     return false
 end
-
-function Solo:MirrorCount() end
-function Solo:MirrorBarText() end
-function Solo:MirrorBarProgress() end
-function Solo:MirrorCooldown() end
-function Solo:MirrorDesaturation() end
-function Solo:RestoreUnderlyingCooldown() return false end
 
 function Solo:InstallMirrors(item, display)
     if not item or not display then return end

@@ -111,16 +111,30 @@ function Runtime:HookItem(item)
         end)
     end
 
-    -- Blizzard can reapply its own rounded border/mask while applications,
-    -- charges, or border state refresh. Queue a deferred presentation refresh so
-    -- BabyAuras' skin remains stable without modifying secret cooldown/aura data
-    -- from inside Blizzard's execution path.
-    for _, method in ipairs({ "RefreshIconBorder", "RefreshApplications", "RefreshSpellChargeInfo" }) do
+    -- Blizzard refreshes these regions independently and may clear or replace
+    -- cooldown presentation after BabyAuras has styled the item. Reapply on the
+    -- next frame so the native timer remains the source of truth, including when
+    -- its values are secret in combat.
+    for _, method in ipairs({
+        "RefreshIconBorder",
+        "RefreshApplications",
+        "RefreshSpellChargeInfo",
+        "RefreshSpellCooldownInfo",
+        "SetTimerShown",
+    }) do
         if type(item[method]) == "function" then
             hooksecurefunc(item, method, function(frame)
                 addon.Runtime:QueueItemRefresh(frame, true)
             end)
         end
+    end
+
+    -- Buff icons use this method for their aura timer. Buff bars also define it,
+    -- but call it from OnUpdate, so only hook items that own a Cooldown widget.
+    if item.Cooldown and type(item.RefreshCooldownInfo) == "function" then
+        hooksecurefunc(item, "RefreshCooldownInfo", function(frame)
+            addon.Runtime:QueueItemRefresh(frame, true)
+        end)
     end
 
     if type(item.OnActiveStateChanged) == "function" then
@@ -184,7 +198,6 @@ end
 function Runtime:ScanViewer(viewer)
     if not viewer or not viewer.itemFramePool then return end
     for item in viewer.itemFramePool:EnumerateActive() do self:HookItem(item) end
-    addon.Solo:CompactViewer(viewer)
 end
 
 function Runtime:GetActiveItems()

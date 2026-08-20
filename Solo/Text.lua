@@ -112,6 +112,9 @@ local function GetNativeStackFontString(item)
     if item.Applications and item.Applications.Applications then
         return item.Applications.Applications
     end
+    if item.Icon and item.Icon.Applications then
+        return item.Icon.Applications
+    end
     if item.ChargeCount and item.ChargeCount.Current then
         return item.ChargeCount.Current
     end
@@ -234,11 +237,6 @@ function Solo:ApplyCooldownTextLayout(display, size, x, y)
     local font = _G[fontName] or CreateFont(fontName)
     pcall(font.SetFont, font, fontPath or STANDARD_TEXT_FONT, size, "OUTLINE")
     if type(cooldown.SetCountdownFont) == "function" then
-        local state = self.liveCooldownStates[cooldown]
-        if state and state.countdownFont == nil and type(cooldown.GetCountdownFont) == "function" then
-            local ok, original = pcall(cooldown.GetCountdownFont, cooldown)
-            if ok then state.countdownFont = original or false end
-        end
         pcall(cooldown.SetCountdownFont, cooldown, fontName)
     end
     local text
@@ -248,22 +246,6 @@ function Solo:ApplyCooldownTextLayout(display, size, x, y)
     end
     text = text or FindCooldownText(cooldown)
     if not text then return end
-    local state = self.liveCooldownStates[cooldown]
-    if state and not state.countdownText then
-        state.countdownText = {
-            region = text,
-            points = {},
-            font = { text:GetFont() },
-            color = { text:GetTextColor() },
-        }
-        local fontObject = text.GetFontObject and text:GetFontObject()
-        state.countdownText.fontName = fontObject and fontObject:GetName() or nil
-        pcall(function()
-            for index = 1, text:GetNumPoints() do
-                state.countdownText.points[index] = { text:GetPoint(index) }
-            end
-        end)
-    end
     pcall(function()
         local r, g, b, a = GetTextColor(settings, "soloCooldownColor", "cooldownColor")
         text:SetFont(fontPath or STANDARD_TEXT_FONT, size, "OUTLINE")

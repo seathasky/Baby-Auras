@@ -129,7 +129,9 @@ function Solo:RefreshItem(item)
     if oldCooldownID and (not entry or oldCooldownID ~= entry.cooldownID) then
         local oldDisplay = self.displays[oldCooldownID]
         if self.sources[oldCooldownID] == item then
-            if oldDisplay and oldDisplay.LiveCooldown then self:DetachLiveCooldown(oldDisplay) end
+            if oldDisplay and (oldDisplay.LiveCooldown or oldDisplay.NativeItem) then
+                self:DetachLiveCooldown(oldDisplay)
+            end
             if addon.Effects then addon.Effects:HideGlow(item) end
             self.sources[oldCooldownID] = nil
             if oldDisplay then
@@ -210,9 +212,6 @@ function Solo:ReconcileDisplays()
     end
     if self.RefreshSpecPreviewDisplays then self:RefreshSpecPreviewDisplays() end
 end
-
--- Kept as a no-op compatibility entry point for Runtime.
-function Solo:CompactViewer() end
 
 function Solo:SetEnabled(entry, enabled)
     if InCombatLockdown() then return false, "Solo icons cannot be changed during combat." end

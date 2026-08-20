@@ -47,10 +47,6 @@ Theme.colors = {
     muted = { 0.560, 0.690, 0.780, 1 },
 }
 
-local function Color(texture, color)
-    texture:SetColorTexture(color[1], color[2], color[3], color[4] or 1)
-end
-
 function Theme:Pixel(frame, pixels)
     if not self.LPP or not frame then return pixels or 0 end
     self.LPP.SetParentFrame(frame)
@@ -112,20 +108,6 @@ function Theme:ApplyFontTree(frame)
     for index = 1, select("#", frame:GetChildren()) do
         self:ApplyFontTree(select(index, frame:GetChildren()))
     end
-end
-
-local function AddEdges(control, color)
-    if control.BabyAuraEdges then return end
-    control.BabyAuraEdges = {}
-    local top = control:CreateTexture(nil, "BORDER")
-    top:SetPoint("TOPLEFT"); top:SetPoint("TOPRIGHT"); Theme:Height(top, 1); Color(top, color)
-    local bottom = control:CreateTexture(nil, "BORDER")
-    bottom:SetPoint("BOTTOMLEFT"); bottom:SetPoint("BOTTOMRIGHT"); Theme:Height(bottom, 1); Color(bottom, color)
-    local left = control:CreateTexture(nil, "BORDER")
-    left:SetPoint("TOPLEFT"); left:SetPoint("BOTTOMLEFT"); Theme:Width(left, 1); Color(left, color)
-    local right = control:CreateTexture(nil, "BORDER")
-    right:SetPoint("TOPRIGHT"); right:SetPoint("BOTTOMRIGHT"); Theme:Width(right, 1); Color(right, color)
-    control.BabyAuraEdges = { top, bottom, left, right }
 end
 
 function Theme:SkinButton(button, strong)

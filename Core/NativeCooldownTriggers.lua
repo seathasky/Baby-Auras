@@ -19,18 +19,22 @@ if readyCurve then
     readyCurve:AddPoint(0.001, 0)
 end
 
-local managedCategories = {
-    [Category.Essential] = true,
-    [Category.Utility] = true,
-    [Category.SpecAgnosticEssential] = true,
-    [Category.EquipSlotEssential] = true,
-}
+local managedCategories = {}
+local function AddManagedCategory(category)
+    if category ~= nil then managedCategories[category] = true end
+end
+AddManagedCategory(Category.Essential)
+AddManagedCategory(Category.Utility)
+AddManagedCategory(Category.SpecAgnosticEssential)
+AddManagedCategory(Category.EquipSlotEssential)
 
-local managedTriggers = {
-    [AlertType.Available] = true,
-    [AlertType.OnCooldown] = true,
-    [AlertType.ChargeGained] = true,
-}
+local managedTriggers = {}
+local function AddManagedTrigger(trigger)
+    if trigger ~= nil then managedTriggers[trigger] = true end
+end
+AddManagedTrigger(AlertType.Available)
+AddManagedTrigger(AlertType.OnCooldown)
+AddManagedTrigger(AlertType.ChargeGained)
 
 local function GetActiveManagedCooldownIDs()
     local active = {}
@@ -222,7 +226,9 @@ function Monitor:HandleNativeStarted(entry)
 end
 
 local function SpellIDsMatch(entry, castSpellID)
-    if not entry or type(castSpellID) ~= "number" then return false end
+    if not entry or not IsAccessible(castSpellID) or type(castSpellID) ~= "number" then
+        return false
+    end
     local spellID, baseSpellID = ResolveNativeSpellID(entry)
     if castSpellID == spellID or castSpellID == baseSpellID then return true end
     if not C_Spell or not C_Spell.GetBaseSpell then return false end
@@ -430,7 +436,7 @@ eventFrame:RegisterUnitEvent("UNIT_SPELLCAST_SUCCEEDED", "player")
 
 eventFrame:SetScript("OnEvent", function(_, event, unit, _, spellID)
     if event == "UNIT_SPELLCAST_SUCCEEDED" then
-        Monitor:HandlePlayerSpellcast(spellID)
+        if IsAccessible(spellID) then Monitor:HandlePlayerSpellcast(spellID) end
     elseif event == "LOADING_SCREEN_ENABLED" then
         Monitor.suppressedUntil = math.huge
     elseif event == "LOADING_SCREEN_DISABLED" or event == "PLAYER_ENTERING_WORLD" then

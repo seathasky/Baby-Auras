@@ -8,9 +8,7 @@ addon.Solo = addon.Solo or {
     suspensionReasons = {},
     displays = {},
     sources = {},
-    liveCooldownStates = setmetatable({}, { __mode = "k" }),
     itemCooldownIDs = setmetatable({}, { __mode = "k" }),
-    mirrorHooks = setmetatable({}, { __mode = "k" }),
     nativeHostStates = setmetatable({}, { __mode = "k" }),
 }
 
