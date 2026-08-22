@@ -307,13 +307,13 @@ function Solo:CreateEditBar()
     spacing:SetObeyStepOnDrag(true)
     spacing.Low:SetText("")
     spacing.High:SetText("")
-    local spacingValue = movementPanel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    spacingValue:SetPoint("LEFT", spacing, "RIGHT", 9, 0)
+    local spacingValue
     spacing:SetScript("OnValueChanged", function(_, value)
         value = math.floor(value + 0.5)
         BabyAurasDB.snapSpacing = value
         spacingValue:SetText(value .. " px")
     end)
+    spacingValue = addon.GUIWidgets.AttachSliderInput(movementPanel, spacing, { suffix = " px", width = 46 })
     spacing:SetValue(BabyAurasDB.snapSpacing or 1)
     self.snapSpacing = spacing
     self.snapSpacingLabel = spacingLabel

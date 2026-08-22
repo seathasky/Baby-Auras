@@ -60,13 +60,11 @@ function AudioSection:Build(editor, anchor, frame)
     volume.Text:SetText("")
     volume:SetScript("OnValueChanged", function(_, value) GUI:OnTTSVolumeChanged(value) end)
     frame.TTSVolume = volume
-    local volumeValue = editor:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    volumeValue:SetPoint("LEFT", volume, "RIGHT", 10, 0)
-    volumeValue:SetText("Volume 100%")
+    local volumeValue = Widgets.AttachSliderInput(editor, volume, { suffix = "%" })
     frame.TTSVolumeValue = volumeValue
 
     local audio, audioLabel = Widgets.CreateCheckbox(editor, "Audio", 55)
-    audio:SetPoint("TOPLEFT", volume, "BOTTOMLEFT", -7, -13)
+    audio:SetPoint("TOPLEFT", volume, "BOTTOMLEFT", -7, -18)
     audio:SetScript("OnClick", function() GUI:OnAudioClicked() end)
     frame.Audio, frame.AudioLabel = audio, audioLabel
     local dropdown = FrameUtil.CreateFrame(nil, editor, "WowStyle1DropdownTemplate")
@@ -129,7 +127,7 @@ function AudioSection:Build(editor, anchor, frame)
         audio = audio, audioLabel = audioLabel, dropdown = dropdown, preview = preview, channel = channel,
         descriptor = {
             key = "voice", title = title, toggle = toggle, bottom = channel,
-            gap = -14, collapseHeight = 172,
+            gap = -14, collapseHeight = 177,
             elements = {
                 tts, ttsLabel, textLabel, textBox, speechRateLabel, speechRate, rateHint,
                 volume, volumeValue, audio, audioLabel, dropdown, preview, channel,

@@ -306,9 +306,16 @@ function Monitor:Evaluate(primeOnly)
         if cooldownID and activeCooldownIDs[cooldownID]
             and managedCategories[entry.category] and not seen[cooldownID] then
             seen[cooldownID] = true
-            local readyEnabled, readySettings = IsTriggerEnabled(entry, AlertType.Available)
-            local startedEnabled, startedSettings = IsTriggerEnabled(entry, AlertType.OnCooldown)
-            local chargeEnabled, chargeSettings = IsTriggerEnabled(entry, AlertType.ChargeGained)
+            local primaryTrigger = addon:GetPrimaryTrigger(entry)
+            local primarySettings = managedTriggers[primaryTrigger]
+                and GetTriggerSettings(entry, primaryTrigger) or nil
+            local primaryEnabled = primarySettings and primarySettings.enabled == true
+            local readyEnabled = primaryEnabled and primaryTrigger == AlertType.Available
+            local startedEnabled = primaryEnabled and primaryTrigger == AlertType.OnCooldown
+            local chargeEnabled = primaryEnabled and primaryTrigger == AlertType.ChargeGained
+            local readySettings = readyEnabled and primarySettings or nil
+            local startedSettings = startedEnabled and primarySettings or nil
+            local chargeSettings = chargeEnabled and primarySettings or nil
             local monitored = readyEnabled or startedEnabled or chargeEnabled
 
             if monitored then
@@ -364,7 +371,7 @@ function Monitor:Evaluate(primeOnly)
                                 -- Ready trigger itself is disabled or sound-only.
                                 addon.Effects:HideGlow(item)
                                 if readyEnabled and not suppressed
-                                    and GetActiveManagedCooldownIDs()[cooldownID]
+                                    and activeCooldownIDs[cooldownID]
                                     and self:GetLiveItem(entry) ~= nil then
                                     self:Fire(entry, AlertType.Available, readySettings)
                                 end

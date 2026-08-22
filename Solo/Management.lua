@@ -60,7 +60,7 @@ function Solo:SetSourceHidden(item, hidden)
     item:SetAlpha(hidden and 0 or 1)
 end
 
-function Solo:EnsureDisplay(entry, item)
+function Solo:EnsureDisplay(entry, item, deferRefresh)
     local display = self.displays[entry.cooldownID]
     local itemIsBar = item and self:IsTrackedBarItem(item) or false
     if display and item and display.isBar ~= itemIsBar then
@@ -89,29 +89,30 @@ function Solo:EnsureDisplay(entry, item)
     self:ApplyDisplayScale(display)
     if item then
         self.sources[entry.cooldownID] = item
-        self:InstallMirrors(item, display)
+        if display.NativeItem ~= item or not self:IsNativeHosted(item) then
+            self:InstallMirrors(item, display)
+        end
     end
-    self:RefreshDisplay(display)
+    if not deferRefresh then self:RefreshDisplay(display) end
     return display
 end
 
 function Solo:SyncFromItem(item)
     local entry = addon.Runtime.itemEntries[item]
     if not entry or not IsSoloEnabled(entry) or not self:IsSupportedItem(item) then return end
-    local display = self:EnsureDisplay(entry, item)
+    local display = self:EnsureDisplay(entry, item, true)
     if type(item.IsActive) == "function" then
         local ok, active = pcall(item.IsActive, item)
         if ok and not addon:IsSecret(active) then display.active = active == true end
     end
     self:UpdateActiveState(item, display)
-    self:SyncCooldown(item, display)
     self:RefreshDisplay(display)
 end
 
 function Solo:OnTrigger(item, trigger)
     local entry = addon.Runtime.itemEntries[item]
     if not entry or not IsSoloEnabled(entry) then return end
-    local display = self:EnsureDisplay(entry, item)
+    local display = self:EnsureDisplay(entry, item, true)
     if trigger == Enum.CooldownViewerAlertEventType.OnAuraApplied then
         display.active = true
         display.activeState = true
@@ -119,7 +120,6 @@ function Solo:OnTrigger(item, trigger)
         display.active = false
         display.activeState = false
     end
-    self:SyncCooldown(item, display)
     self:RefreshDisplay(display)
 end
 

@@ -117,7 +117,7 @@ function Alerts:Build(editor, anchor, frame)
 
     tuning.thicknessLabel, tuning.thickness, tuning.thicknessValue =
         Widgets.CreateGlowSlider(editor, "Thickness", 1, 8, "glowThickness", " px")
-    tuning.thicknessLabel:SetPoint("TOPLEFT", tuning.count, "BOTTOMLEFT", -7, -20)
+    tuning.thicknessLabel:SetPoint("TOPLEFT", tuning.count, "BOTTOMLEFT", -7, -28)
     tuning.thickness:SetPoint("TOPLEFT", tuning.thicknessLabel, "BOTTOMLEFT", 7, -5)
     frame.GlowThicknessLabel, frame.GlowThickness, frame.GlowThicknessValue =
         tuning.thicknessLabel, tuning.thickness, tuning.thicknessValue
@@ -129,7 +129,10 @@ function Alerts:Build(editor, anchor, frame)
     frame.GlowPaddingLabel, frame.GlowPadding, frame.GlowPaddingValue =
         tuning.paddingLabel, tuning.padding, tuning.paddingValue
 
-    frame.GlowTuningControls = { tuning.count, tuning.speed, tuning.thickness, tuning.padding }
+    frame.GlowTuningControls = {
+        tuning.count, tuning.countValue, tuning.speed, tuning.speedValue,
+        tuning.thickness, tuning.thicknessValue, tuning.padding, tuning.paddingValue,
+    }
     frame.GlowTuningElements = {
         tuning.countLabel, tuning.count, tuning.countValue,
         tuning.speedLabel, tuning.speed, tuning.speedValue,
@@ -139,8 +142,8 @@ function Alerts:Build(editor, anchor, frame)
 
     -- Keep motion controls together below the glow controls. Bounce duration
     -- sits directly beneath Bounce instead of being mixed into glow tuning.
-    zoom:SetPoint("TOPLEFT", tuning.thickness, "BOTTOMLEFT", -7, -18)
-    bounce:SetPoint("TOPLEFT", tuning.padding, "BOTTOMLEFT", -7, -18)
+    zoom:SetPoint("TOPLEFT", tuning.thickness, "BOTTOMLEFT", -7, -24)
+    bounce:SetPoint("TOPLEFT", tuning.padding, "BOTTOMLEFT", -7, -24)
     bounceDurationLabel:SetPoint("TOPLEFT", bounce, "BOTTOMLEFT", 4, -7)
 
     local reset = CreateFrame("Button", nil, editor, "UIPanelButtonTemplate")
@@ -163,7 +166,7 @@ function Alerts:Build(editor, anchor, frame)
         color = color, tuning = tuning, reset = reset,
         descriptor = {
             key = "effects", title = title, toggle = toggle, bottom = reset,
-            gap = -14, collapseHeight = 249,
+            gap = -14, collapseHeight = 263,
             elements = {
                 glow, glowLabel, styleLabel, style, zoom, zoomLabel, bounce, bounceLabel,
                 durationLabel, duration, durationHint, color,

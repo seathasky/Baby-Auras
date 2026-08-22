@@ -32,9 +32,7 @@ function ThemeSection:Build(editor, anchor, frame)
     borderSize.Text:SetText("")
     borderSize:SetScript("OnValueChanged", function(_, value) GUI:OnSoloBorderSizeChanged(value) end)
     frame.SoloBorderSize = borderSize
-    local borderSizeValue = editor:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    borderSizeValue:SetPoint("LEFT", borderSize, "RIGHT", 9, 0)
-    borderSizeValue:SetText("1 px")
+    local borderSizeValue = Widgets.AttachSliderInput(editor, borderSize, { suffix = " px", width = 46 })
     frame.SoloBorderSizeValue = borderSizeValue
 
     local bar = {}
@@ -55,7 +53,7 @@ function ThemeSection:Build(editor, anchor, frame)
     frame.SoloBarThemeElements = { bar.color, bar.progress }
 
     local fontLabel = editor:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    fontLabel:SetPoint("TOPLEFT", border, "BOTTOMLEFT", 4, -10)
+    fontLabel:SetPoint("TOPLEFT", border, "BOTTOMLEFT", 4, -15)
     fontLabel:SetText("Text font")
     fontLabel:SetTextColor(1, 1, 1)
     frame.SoloFontLabel = fontLabel
@@ -131,7 +129,7 @@ function ThemeSection:Build(editor, anchor, frame)
         barTextColor = barTextColor, reset = reset,
         descriptor = {
             key = "theme", title = title, toggle = toggle, bottom = reset,
-            gap = -16, collapseHeight = 192,
+            gap = -16, collapseHeight = 197,
             elements = {
                 border, borderLabel, borderSize, borderSizeValue, bar.color, bar.progress,
                 fontLabel, font, colorsLabel, stackColor, cooldownColor, hotkeyColor, barTextColor, reset,

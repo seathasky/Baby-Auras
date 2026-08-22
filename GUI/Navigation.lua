@@ -74,12 +74,12 @@ function Navigation:Create(parent, onSelect, onOpenBlizzard)
     local panel = CreateFrame("Frame", nil, parent)
     panel:SetPoint("TOPLEFT", 18, -64)
     panel:SetPoint("BOTTOMLEFT", 18, 24)
-    panel:SetWidth(332)
+    panel:SetWidth(272)
     self.panel = panel
 
     local blizzard = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
     blizzard:SetPoint("TOPLEFT", 0, 0)
-    blizzard:SetSize(310, 34)
+    blizzard:SetSize(250, 34)
     blizzard:SetText("Choose Spells to Track")
     blizzard:GetFontString():SetTextColor(1, 1, 1)
     blizzard:SetScript("OnClick", function()
@@ -89,7 +89,7 @@ function Navigation:Create(parent, onSelect, onOpenBlizzard)
 
     local hint = panel:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     hint:SetPoint("TOPLEFT", blizzard, "BOTTOMLEFT", 4, -4)
-    hint:SetWidth(306)
+    hint:SetWidth(246)
     hint:SetJustifyH("LEFT")
     hint:SetText("Opens Blizzard Cooldown Manager. Baby Auras lists your chosen elements below.")
     self.hint = hint
@@ -98,7 +98,7 @@ function Navigation:Create(parent, onSelect, onOpenBlizzard)
     scroll:SetPoint("TOPLEFT", 0, -70)
     scroll:SetPoint("BOTTOMRIGHT", -24, 14)
     local content = CreateFrame("Frame", nil, scroll)
-    content:SetWidth(300)
+    content:SetWidth(240)
     content:SetHeight(1)
     scroll:SetScrollChild(content)
     self.scroll = scroll
@@ -124,7 +124,7 @@ function Navigation:Refresh(selectedCooldownID)
     local y = 0
     local headerIndex = 0
     local iconIndex = 0
-    local columns = 6
+    local columns = 5
     local iconStep = 47
     for _, section in ipairs(addon.Runtime:GetCDMSections()) do
         headerIndex = headerIndex + 1

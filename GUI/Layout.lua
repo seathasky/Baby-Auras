@@ -81,7 +81,7 @@ function GUI:ApplyEditorSectionLayout()
                 local panel = section.background.frame
                 panel:ClearAllPoints()
                 panel:SetPoint("TOPLEFT", section.title, "BOTTOMLEFT", -10, -2)
-                panel:SetPoint("TOPRIGHT", section.title, "BOTTOMLEFT", 330, -2)
+                panel:SetPoint("TOPRIGHT", section.title, "BOTTOMLEFT", 390, -2)
                 if nextTitle then
                     panel:SetPoint("BOTTOMLEFT", nextTitle, "TOPLEFT", -10, 15)
                 else
@@ -94,7 +94,7 @@ function GUI:ApplyEditorSectionLayout()
             end
         end
     end
-    local height = 1369
+    local height = 1511
     for _, section in ipairs(frame.EditorSections) do
         if not section.title:IsShown() or self:IsEditorSectionCollapsed(section.key) then
             height = height - section.collapseHeight

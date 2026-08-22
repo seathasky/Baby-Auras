@@ -81,19 +81,19 @@ function GUI:Create()
     -- Window artwork, panel backgrounds, and structural dividers.
     local backgroundArt = frame:CreateTexture(nil, "BACKGROUND", nil, 7)
     backgroundArt:SetPoint("TOPLEFT", 5, -5)
-    backgroundArt:SetPoint("BOTTOMRIGHT", frame, "TOPLEFT", 365, -55)
+    backgroundArt:SetPoint("BOTTOMRIGHT", frame, "TOPLEFT", 305, -55)
     backgroundArt:SetTexture("Interface\\AddOns\\BabyAuras\\Media\\Images\\bg.png")
     backgroundArt:SetAlpha(0.18)
     frame.BackgroundArt = backgroundArt
 
     local leftPanelTint = frame:CreateTexture(nil, "BACKGROUND", nil, 6)
     leftPanelTint:SetPoint("TOPLEFT", 5, -5)
-    leftPanelTint:SetPoint("BOTTOMRIGHT", frame, "BOTTOMLEFT", 365, 5)
+    leftPanelTint:SetPoint("BOTTOMRIGHT", frame, "BOTTOMLEFT", 305, 5)
     leftPanelTint:SetColorTexture(0.105, 0.105, 0.125, 0.72)
     frame.LeftPanelTint = leftPanelTint
 
     local function CropBackgroundToPanel(_, _, frameHeight)
-        local panelWidth = 360
+        local panelWidth = 300
         local panelHeight = 50
         local imageAspect = 1536 / 1024
         local panelAspect = panelWidth / panelHeight
@@ -114,20 +114,20 @@ function GUI:Create()
 
     local titleDivider = frame:CreateTexture(nil, "ARTWORK")
     titleDivider:SetPoint("BOTTOMLEFT", frame, "TOPLEFT", 5, -55)
-    titleDivider:SetPoint("BOTTOMRIGHT", frame, "TOPLEFT", 365, -55)
+    titleDivider:SetPoint("BOTTOMRIGHT", frame, "TOPLEFT", 305, -55)
     titleDivider:SetHeight(addon.Theme:Pixel(frame, 1))
     titleDivider:SetColorTexture(0.34, 0.58, 0.86, 0.9)
     frame.TitleDivider = titleDivider
 
     local editorBackground = frame:CreateTexture(nil, "BACKGROUND", nil, 7)
-    editorBackground:SetPoint("TOPLEFT", 366, -5)
+    editorBackground:SetPoint("TOPLEFT", 306, -5)
     editorBackground:SetPoint("BOTTOMRIGHT", -5, 5)
     editorBackground:SetColorTexture(0.025, 0.025, 0.035, 0.97)
     frame.EditorBackground = editorBackground
 
     local footerBackgroundArt = frame:CreateTexture(nil, "BACKGROUND", nil, 7)
     footerBackgroundArt:SetPoint("BOTTOMLEFT", 5, 2)
-    footerBackgroundArt:SetPoint("BOTTOMRIGHT", frame, "BOTTOMLEFT", 365, 2)
+    footerBackgroundArt:SetPoint("BOTTOMRIGHT", frame, "BOTTOMLEFT", 305, 2)
     footerBackgroundArt:SetHeight(31)
     footerBackgroundArt:SetTexture("Interface\\AddOns\\BabyAuras\\Media\\Images\\bg.png")
     footerBackgroundArt:SetAlpha(0.28)
@@ -323,14 +323,14 @@ function GUI:Create()
 
     local separator = frame:CreateTexture(nil, "ARTWORK")
     separator:SetColorTexture(0.3, 0.3, 0.3, 0.8)
-    separator:SetPoint("TOPLEFT", frame, "TOPLEFT", 365, -5)
-    separator:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 365, 5)
+    separator:SetPoint("TOPLEFT", frame, "TOPLEFT", 305, -5)
+    separator:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 305, 5)
     separator:SetWidth(1)
 
     local classStatusGroup = CreateFrame("Frame", nil, frame)
     -- Current specialization/class identity lives inside the left title header,
     -- aligned to the far-right side of the same header strip as the Baby Auras logo.
-    classStatusGroup:SetPoint("RIGHT", frame, "TOPLEFT", 351, -30)
+    classStatusGroup:SetPoint("RIGHT", frame, "TOPLEFT", 291, -30)
     classStatusGroup:SetHeight(23)
 
     local classStatusIcon = classStatusGroup:CreateTexture(nil, "ARTWORK")
@@ -424,13 +424,10 @@ function GUI:Create()
     local fadeOpacityLabel = settingsPopup:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     fadeOpacityLabel:SetPoint("TOPLEFT", fadeOption, "BOTTOMLEFT", 4, -8)
     fadeOpacityLabel:SetText("Faded opacity")
-    local fadeOpacityValue = settingsPopup:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    fadeOpacityValue:SetPoint("LEFT", fadeOpacityLabel, "RIGHT", 8, 0)
-    fadeOpacityValue:SetText((BabyAurasDB.fadeOpacity or Defaults.database.fadeOpacity) .. "%")
 
     local fadeOpacity = CreateFrame("Slider", nil, settingsPopup, "OptionsSliderTemplate")
     fadeOpacity:SetPoint("TOPLEFT", fadeOpacityLabel, "BOTTOMLEFT", 7, -8)
-    fadeOpacity:SetSize(185, 16)
+    fadeOpacity:SetSize(145, 16)
     fadeOpacity:SetMinMaxValues(10, 90)
     fadeOpacity:SetValueStep(5)
     fadeOpacity:SetObeyStepOnDrag(true)
@@ -439,19 +436,17 @@ function GUI:Create()
     fadeOpacity.Text:SetText("")
     fadeOpacity:SetValue(BabyAurasDB.fadeOpacity or Defaults.database.fadeOpacity)
     fadeOpacity:SetScript("OnValueChanged", function(_, value) GUI:SetFadeOpacity(value) end)
+    local fadeOpacityValue = Widgets.AttachSliderInput(settingsPopup, fadeOpacity, { suffix = "%" })
     frame.FadeOpacity = fadeOpacity
     frame.FadeOpacityValue = fadeOpacityValue
 
     local guiScaleLabel = settingsPopup:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     guiScaleLabel:SetPoint("TOPLEFT", fadeOpacity, "BOTTOMLEFT", -7, -13)
     guiScaleLabel:SetText("GUI scale")
-    local guiScaleValue = settingsPopup:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    guiScaleValue:SetPoint("LEFT", guiScaleLabel, "RIGHT", 8, 0)
-    guiScaleValue:SetText((BabyAurasDB.guiScale or Defaults.database.guiScale) .. "%")
 
     local guiScale = CreateFrame("Slider", nil, settingsPopup, "OptionsSliderTemplate")
     guiScale:SetPoint("TOPLEFT", guiScaleLabel, "BOTTOMLEFT", 7, -8)
-    guiScale:SetSize(185, 16)
+    guiScale:SetSize(145, 16)
     guiScale:SetMinMaxValues(70, 130)
     guiScale:SetValueStep(5)
     guiScale:SetObeyStepOnDrag(true)
@@ -467,6 +462,10 @@ function GUI:Create()
         local scale = GUI:SetGUIScale(self:GetValue())
         if self:GetValue() ~= scale then self:SetValue(scale) end
     end)
+    local guiScaleValue = Widgets.AttachSliderInput(settingsPopup, guiScale, {
+        suffix = "%",
+        onCommit = function(value) GUI:SetGUIScale(value) end,
+    })
     frame.GUIScale = guiScale
     frame.GUIScaleValue = guiScaleValue
 
@@ -579,13 +578,13 @@ function GUI:Create()
     frame.ResizeGrip = resizeGrip
 
     local empty = frame:CreateFontString(nil, "ARTWORK", "GameFontHighlight")
-    empty:SetPoint("CENTER", 185, 0)
-    empty:SetWidth(330)
+    empty:SetPoint("CENTER", 155, 0)
+    empty:SetWidth(270)
     frame.Empty = empty
 
     -- Scrollable editor viewport and its content canvas.
     local editorScroll = CreateFrame("ScrollFrame", "BabyAurasEditorScrollFrame", frame, "UIPanelScrollFrameTemplate")
-    editorScroll:SetPoint("TOPLEFT", 385, -60)
+    editorScroll:SetPoint("TOPLEFT", 325, -60)
     editorScroll:SetPoint("BOTTOMRIGHT", -42, 42)
     editorScroll:EnableMouseWheel(true)
     editorScroll:SetScript("OnMouseWheel", function(self, delta)
@@ -595,7 +594,7 @@ function GUI:Create()
     frame.EditorScroll = editorScroll
 
     local editor = CreateFrame("Frame", nil, editorScroll)
-    editor:SetSize(335, 1160)
+    editor:SetSize(395, 1160)
     editorScroll:SetScrollChild(editor)
     frame.Editor = editor
 
@@ -605,7 +604,7 @@ function GUI:Create()
     -- opaque overlay prevents scrolled controls from bleeding through it.
     frame.SelectedHeader = CreateFrame("Frame", nil, frame, "BackdropTemplate")
     frame.SelectedHeader:SetPoint("TOPLEFT", editorScroll, "TOPLEFT", 0, 0)
-    frame.SelectedHeader:SetSize(335, 58)
+    frame.SelectedHeader:SetSize(395, 58)
     frame.SelectedHeader:SetFrameLevel(editorScroll:GetFrameLevel() + 20)
     frame.SelectedHeader:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8" })
     frame.SelectedHeader:SetBackdropColor(0.025, 0.025, 0.035, 1)
@@ -622,7 +621,7 @@ function GUI:Create()
     frame.SelectedIcon = selectedIcon
     local selectedName = frame.SelectedHeader:CreateFontString(nil, "ARTWORK", "GameFontNormalLarge")
     selectedName:SetPoint("TOPLEFT", selectedIcon, "TOPRIGHT", 10, -3)
-    selectedName:SetWidth(280)
+    selectedName:SetWidth(340)
     selectedName:SetJustifyH("LEFT")
     if selectedName.SetWordWrap then selectedName:SetWordWrap(false) end
     if selectedName.SetNonSpaceWrap then selectedName:SetNonSpaceWrap(false) end
@@ -635,19 +634,19 @@ function GUI:Create()
     }
     local selectedID = frame.SelectedHeader:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     selectedID:SetPoint("TOPLEFT", selectedIcon, "TOPRIGHT", 10, -25)
-    selectedID:SetWidth(245)
+    selectedID:SetWidth(305)
     selectedID:SetJustifyH("LEFT")
     frame.SelectedID = selectedID
     local selectedTimer = frame.SelectedHeader:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     selectedTimer:SetPoint("TOPLEFT", selectedID, "BOTTOMLEFT", 0, -1)
-    selectedTimer:SetWidth(245)
+    selectedTimer:SetWidth(305)
     selectedTimer:SetJustifyH("LEFT")
     frame.SelectedTimer = selectedTimer
 
     -- Trigger enable gate and unsupported-state message.
     local enablePanel = CreateFrame("Frame", nil, editor, "BackdropTemplate")
     enablePanel:SetPoint("TOPLEFT", 0, -60)
-    enablePanel:SetSize(335, 42)
+    enablePanel:SetSize(395, 42)
     ApplyBackdrop(enablePanel)
     frame.EnablePanel = enablePanel
     local enabled, enabledLabel = CreateCheckbox(enablePanel, "ENABLE ALERTS", 245)
@@ -688,20 +687,23 @@ function GUI:Create()
         displaySection.stackSizeLabel, displaySection.stackSize, displaySection.stackSizeValue
     local soloCooldownSizeLabel, soloCooldownSize, soloCooldownSizeValue =
         displaySection.cooldownSizeLabel, displaySection.cooldownSize, displaySection.cooldownSizeValue
-    local stackPositionLabel, stackXLabel, stackX =
-        displaySection.stackPositionLabel, displaySection.stackXLabel, displaySection.stackX
-    local stackYLabel, stackY = displaySection.stackYLabel, displaySection.stackY
-    local cooldownPositionLabel, cooldownXLabel, cooldownX =
-        displaySection.cooldownPositionLabel, displaySection.cooldownXLabel, displaySection.cooldownX
-    local cooldownYLabel, cooldownY = displaySection.cooldownYLabel, displaySection.cooldownY
+    local stackPositionLabel, stackXLabel, stackX, stackXValue =
+        displaySection.stackPositionLabel, displaySection.stackXLabel, displaySection.stackX, displaySection.stackXValue
+    local stackYLabel, stackY, stackYValue = displaySection.stackYLabel, displaySection.stackY, displaySection.stackYValue
+    local cooldownPositionLabel, cooldownXLabel, cooldownX, cooldownXValue =
+        displaySection.cooldownPositionLabel, displaySection.cooldownXLabel, displaySection.cooldownX, displaySection.cooldownXValue
+    local cooldownYLabel, cooldownY, cooldownYValue =
+        displaySection.cooldownYLabel, displaySection.cooldownY, displaySection.cooldownYValue
     local soloHotkeyLabel, soloHotkey, soloHotkeySizeLabel =
         displaySection.hotkeyLabel, displaySection.hotkey, displaySection.hotkeySizeLabel
     local soloHotkeySize, soloHotkeySizeValue = displaySection.hotkeySize, displaySection.hotkeySizeValue
-    local hotkeyPositionLabel, hotkeyXLabel, hotkeyX =
-        displaySection.hotkeyPositionLabel, displaySection.hotkeyXLabel, displaySection.hotkeyX
-    local hotkeyYLabel, hotkeyY = displaySection.hotkeyYLabel, displaySection.hotkeyY
+    local hotkeyPositionLabel, hotkeyXLabel, hotkeyX, hotkeyXValue =
+        displaySection.hotkeyPositionLabel, displaySection.hotkeyXLabel,
+        displaySection.hotkeyX, displaySection.hotkeyXValue
+    local hotkeyYLabel, hotkeyY, hotkeyYValue =
+        displaySection.hotkeyYLabel, displaySection.hotkeyY, displaySection.hotkeyYValue
 
-    local themeSection = addon.GUISections.Theme:Build(editor, hotkeyPositionLabel, frame)
+    local themeSection = addon.GUISections.Theme:Build(editor, hotkeyYLabel, frame)
     local themeTitle, themeLine, themeToggle = themeSection.title, themeSection.line, themeSection.toggle
     local soloBlackBorder, soloBlackBorderLabel = themeSection.border, themeSection.borderLabel
     local soloBorderSize, soloBorderSizeValue = themeSection.borderSize, themeSection.borderSizeValue
@@ -759,7 +761,7 @@ function GUI:Create()
     -- theme, positioning, and icon customization remain independent.
     frame.TriggerGateControls = {
         glow, zoom, bounce, glowStyle, duration, bounceDuration, glowColor, frame.ResetAlertEffects,
-        tts, textBox, speechRate, ttsVolume, audio, audioDropdown, audioPreview, audioChannel,
+        tts, textBox, speechRate, ttsVolume, ttsVolumeValue, audio, audioDropdown, audioPreview, audioChannel,
     }
     frame.TriggerGateElements = {
         effectsTitle, effectsLine, glow, glowLabel, zoom, zoomLabel, bounce, bounceLabel,
@@ -777,12 +779,18 @@ function GUI:Create()
 
     -- Controls and labels whose availability depends on Solo-icon support.
     frame.SoloOptionControls = {
-        soloOnTop, soloSize, soloCrop, soloCropAmount, soloBar.icon, soloBar.width, soloBar.height, soloBar.text, soloBar.match,
+        soloOnTop, soloSize, soloSizeValue, soloCrop, soloCropAmount, soloCropValue,
+        soloBar.icon, soloBar.iconValue, soloBar.width, soloBar.widthValue,
+        soloBar.height, soloBar.heightValue, soloBar.text, soloBar.textValue, soloBar.match,
         soloShowSwipe, soloShowNumbers, soloKeepColored, soloClassSwipe,
         soloActiveBorder, soloAlwaysShow, soloDesaturateInactive, soloShowStacks,
-        soloOpacity, soloStackSize, soloCooldownSize, stackX, stackY, cooldownX, cooldownY,
-        soloHotkey, soloHotkeySize, hotkeyX, hotkeyY,
-        soloBlackBorder, soloBorderSize, soloBarTheme.color, soloBarTheme.progress,
+        soloOpacity, soloOpacityValue, soloStackSize, soloStackSizeValue,
+        soloCooldownSize, soloCooldownSizeValue,
+        stackX, stackXValue, stackY, stackYValue,
+        cooldownX, cooldownXValue, cooldownY, cooldownYValue,
+        soloHotkey, soloHotkeySize, soloHotkeySizeValue,
+        hotkeyX, hotkeyXValue, hotkeyY, hotkeyYValue,
+        soloBlackBorder, soloBorderSize, soloBorderSizeValue, soloBarTheme.color, soloBarTheme.progress,
         soloFont, soloStackColor, soloCooldownColor, soloHotkeyColor, soloBarTextColor,
         resetSoloTextColors,
     }
@@ -801,10 +809,11 @@ function GUI:Create()
         soloOpacity, soloOpacityLabel, soloOpacityValue,
         soloStackSizeLabel, soloStackSize, soloStackSizeValue,
         soloCooldownSizeLabel, soloCooldownSize, soloCooldownSizeValue,
-        stackPositionLabel, stackXLabel, stackX, stackYLabel, stackY,
-        cooldownPositionLabel, cooldownXLabel, cooldownX, cooldownYLabel, cooldownY,
+        stackPositionLabel, stackXLabel, stackX, stackXValue, stackYLabel, stackY, stackYValue,
+        cooldownPositionLabel, cooldownXLabel, cooldownX, cooldownXValue, cooldownYLabel, cooldownY, cooldownYValue,
         soloHotkeyLabel, soloHotkey, soloHotkeySizeLabel, soloHotkeySize, soloHotkeySizeValue,
-        hotkeyPositionLabel, hotkeyXLabel, hotkeyX, hotkeyYLabel, hotkeyY,
+        hotkeyPositionLabel, hotkeyXLabel, hotkeyX, hotkeyXValue,
+        hotkeyYLabel, hotkeyY, hotkeyYValue,
         themeTitle, themeLine,
         soloBlackBorder, soloBlackBorderLabel, soloBorderSize, soloBorderSizeValue,
         soloBarTheme.color, soloBarTheme.progress, soloFontLabel, soloFont,
@@ -831,16 +840,23 @@ function GUI:Create()
         soloOpacity, soloOpacityLabel, soloOpacityValue,
         soloStackSizeLabel, soloStackSize, soloStackSizeValue,
         soloCooldownSizeLabel, soloCooldownSize, soloCooldownSizeValue,
-        stackPositionLabel, stackXLabel, stackX, stackYLabel, stackY,
-        cooldownPositionLabel, cooldownXLabel, cooldownX, cooldownYLabel, cooldownY,
+        stackPositionLabel, stackXLabel, stackX, stackXValue, stackYLabel, stackY, stackYValue,
+        cooldownPositionLabel, cooldownXLabel, cooldownX, cooldownXValue, cooldownYLabel, cooldownY, cooldownYValue,
         soloHotkeyLabel, soloHotkey, soloHotkeySizeLabel, soloHotkeySize, soloHotkeySizeValue,
-        hotkeyPositionLabel, hotkeyXLabel, hotkeyX, hotkeyYLabel, hotkeyY,
+        hotkeyPositionLabel, hotkeyXLabel, hotkeyX, hotkeyXValue,
+        hotkeyYLabel, hotkeyY, hotkeyYValue,
     }
-    frame.SoloStackPositionControls = { stackX, stackY }
-    frame.SoloStackPositionElements = { stackPositionLabel, stackXLabel, stackX, stackYLabel, stackY }
-    frame.SoloCooldownPositionControls = { cooldownX, cooldownY }
+    frame.SoloStackPositionControls = { stackX, stackXValue, stackY, stackYValue }
+    frame.SoloStackPositionElements = {
+        stackPositionLabel, stackXLabel, stackX, stackXValue, stackYLabel, stackY, stackYValue,
+    }
+    frame.SoloCooldownPositionControls = { cooldownX, cooldownXValue, cooldownY, cooldownYValue }
     frame.SoloCooldownPositionElements = {
-        cooldownPositionLabel, cooldownXLabel, cooldownX, cooldownYLabel, cooldownY,
+        cooldownPositionLabel, cooldownXLabel, cooldownX, cooldownXValue, cooldownYLabel, cooldownY, cooldownYValue,
+    }
+    frame.SoloHotkeyPositionControls = { hotkeyX, hotkeyXValue, hotkeyY, hotkeyYValue }
+    frame.SoloHotkeyPositionElements = {
+        hotkeyPositionLabel, hotkeyXLabel, hotkeyX, hotkeyXValue, hotkeyYLabel, hotkeyY, hotkeyYValue,
     }
 
     -- Final widget styling, initial layout, and first data refresh.

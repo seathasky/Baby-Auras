@@ -134,6 +134,8 @@ local function SaveNativeFontState(hostState, key, fontString)
     if hostState.textDefaults[key] then return hostState.textDefaults[key] end
     local saved = { region = fontString, points = {} }
     pcall(function()
+        saved.parent = fontString:GetParent()
+        saved.drawLayer = { fontString:GetDrawLayer() }
         saved.font = { fontString:GetFont() }
         saved.color = { fontString:GetTextColor() }
         saved.alpha = fontString:GetAlpha()
@@ -143,6 +145,15 @@ local function SaveNativeFontState(hostState, key, fontString)
     end)
     hostState.textDefaults[key] = saved
     return saved
+end
+
+local function HostNativeText(display, saved, fontString)
+    local overlay = display and display.NativeTextOverlay
+    if not overlay or not saved or not fontString then return end
+    pcall(function()
+        if fontString:GetParent() ~= overlay then fontString:SetParent(overlay) end
+        fontString:SetDrawLayer("OVERLAY", 7)
+    end)
 end
 
 function Solo:ApplyNativeTextLayout(display, stackSize, cooldownSize, fontPath,
@@ -159,6 +170,7 @@ function Solo:ApplyNativeTextLayout(display, stackSize, cooldownSize, fontPath,
     local stackText = GetNativeStackFontString(item)
     if stackText then
         local saved = SaveNativeFontState(hostState, "stack", stackText)
+        HostNativeText(display, saved, stackText)
         pcall(stackText.SetFont, stackText, fontPath or STANDARD_TEXT_FONT, stackSize, "OUTLINE")
         pcall(stackText.SetTextColor, stackText, stackR, stackG, stackB, stackA)
         pcall(stackText.SetAlpha, stackText, settings.soloShowStacks == false and 0 or 1)
@@ -194,6 +206,7 @@ function Solo:ApplyNativeTextLayout(display, stackSize, cooldownSize, fontPath,
     elseif cooldownText then
         hostState.cooldownTextRetryPending = nil
         local saved = SaveNativeFontState(hostState, "cooldown", cooldownText)
+        HostNativeText(display, saved, cooldownText)
         pcall(cooldownText.SetFont, cooldownText, fontPath or STANDARD_TEXT_FONT, cooldownSize, "OUTLINE")
         pcall(cooldownText.SetTextColor, cooldownText, cooldownR, cooldownG, cooldownB, cooldownA)
         pcall(cooldownText.SetAlpha, cooldownText, settings.soloShowNumbers == false and 0 or 1)

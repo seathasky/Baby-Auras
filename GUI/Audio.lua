@@ -6,7 +6,7 @@ local Defaults = addon.Defaults
 function GUI:OnTTSVolumeChanged(value)
     if not self.frame or not self.frame.TTSVolume then return end
     local volume = Clamp(math.floor((tonumber(value) or Defaults.trigger.ttsVolume) + 0.5), 0, 100)
-    self.frame.TTSVolumeValue:SetText("Volume " .. volume .. "%")
+    self.frame.TTSVolumeValue:SetText(volume .. "%")
     if not self.refreshing then self:ScheduleAutoSave() end
 end
 
@@ -24,6 +24,7 @@ function GUI:UpdateSoundControls()
     self.frame.TextBox:SetEnabled(ttsEnabled)
     self.frame.SpeechRate:SetEnabled(ttsEnabled)
     self.frame.TTSVolume:SetEnabled(ttsEnabled)
+    self.frame.TTSVolumeValue:SetEnabled(ttsEnabled)
     self.frame.TTSLabel:SetTextColor(ttsEnabled and 1 or 0.45, ttsEnabled and 0.82 or 0.45, 0, 1)
     self.frame.SpeechRateLabel:SetTextColor(ttsEnabled and 1 or 0.45, ttsEnabled and 0.82 or 0.45, 0, 1)
     self.frame.TTSVolume:SetAlpha(ttsEnabled and 1 or 0.32)

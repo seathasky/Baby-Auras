@@ -41,7 +41,7 @@ function Icon:Build(editor, anchor, frame)
 
     local message = editor:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
     message:SetPoint("TOPLEFT", spellID, "BOTTOMLEFT", -4, -16)
-    message:SetWidth(330)
+    message:SetWidth(390)
     message:SetJustifyH("LEFT")
     frame.Message = message
 

@@ -27,7 +27,7 @@ function Display:Build(editor, frame)
 
     local panel = CreateFrame("Frame", nil, editor, "BackdropTemplate")
     panel:SetPoint("TOPLEFT", title, "BOTTOMLEFT", 0, -5)
-    panel:SetSize(335, 44)
+    panel:SetSize(395, 44)
     Widgets.ApplyBackdrop(panel)
     panel:SetBackdropColor(0.02, 0.12, 0.17, 0.96)
     panel:SetBackdropBorderColor(0.2, 0.85, 1, 1)
@@ -51,30 +51,24 @@ function Display:Build(editor, frame)
     local sizeLabel = editor:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     sizeLabel:SetText("Icon size")
     sizeLabel:SetTextColor(1, 1, 1)
-    local sizeValue = editor:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    sizeValue:SetText("100%")
-    sizeValue:SetTextColor(0.42, 0.80, 1)
-    local size = CreateSlider(editor, 50, 200, 150)
-    size:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", 4, -14)
+    sizeLabel:SetPoint("TOPLEFT", panel, "BOTTOMLEFT", 4, -12)
+    local size = CreateSlider(editor, 50, 200, 145)
+    size:SetPoint("TOPLEFT", sizeLabel, "BOTTOMLEFT", 7, -7)
     size:SetValueStep(5)
-    sizeLabel:SetPoint("LEFT", size, "RIGHT", 28, 0)
-    sizeValue:SetPoint("LEFT", sizeLabel, "RIGHT", 9, 0)
     size:SetScript("OnValueChanged", function(_, value) GUI:OnSoloSizeChanged(value) end)
+    local sizeValue = Widgets.AttachSliderInput(editor, size, { suffix = "%" })
     frame.SoloSize, frame.SoloSizeLabel, frame.SoloSizeValue = size, sizeLabel, sizeValue
 
     local crop, cropLabel = Widgets.CreateCheckbox(editor, "Crop icon from bottom", 155)
-    crop:SetPoint("TOPLEFT", size, "BOTTOMLEFT", -4, -17)
+    crop:SetPoint("TOPLEFT", size, "BOTTOMLEFT", -4, -20)
     crop:SetScript("OnClick", function() GUI:OnSoloCropClicked() end)
     frame.SoloCrop, frame.SoloCropLabel = crop, cropLabel
-    local cropAmount = CreateSlider(editor, 0, 50, 85)
-    cropAmount:SetPoint("TOPLEFT", crop, "TOPLEFT", 205, 2)
+    local cropAmount = CreateSlider(editor, 0, 50, 80)
+    cropAmount:SetPoint("TOPLEFT", crop, "TOPLEFT", 185, 2)
     cropAmount:SetValueStep(5)
     cropAmount:SetScript("OnValueChanged", function(_, value) GUI:OnSoloCropChanged(value) end)
     frame.SoloCropAmount = cropAmount
-    local cropValue = editor:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    cropValue:SetPoint("LEFT", cropAmount, "RIGHT", 8, 0)
-    cropValue:SetText("50%")
-    cropValue:SetTextColor(0.42, 0.80, 1)
+    local cropValue = Widgets.AttachSliderInput(editor, cropAmount, { suffix = "%", width = 40 })
     frame.SoloCropValue = cropValue
 
     local function CreateBarSlider(labelText, settingKey, minValue, maxValue, x, y)
@@ -83,11 +77,11 @@ function Display:Build(editor, frame)
         label:SetPoint("TOPLEFT", size, "BOTTOMLEFT", x, y)
         local slider = CreateSlider(editor, minValue, maxValue)
         slider:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 4, -5)
-        local valueText = editor:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-        valueText:SetPoint("LEFT", slider, "RIGHT", 8, 0)
+        local valueText
         slider:SetScript("OnValueChanged", function(_, value)
             GUI:OnSoloBarDimensionChanged(settingKey, value, valueText, labelText)
         end)
+        valueText = Widgets.AttachSliderInput(editor, slider, { suffix = " px", width = 46 })
         return label, slider, valueText
     end
 
@@ -108,7 +102,10 @@ function Display:Build(editor, frame)
         bar.heightLabel, bar.height, bar.heightValue, bar.textLabel, bar.text, bar.textValue,
         bar.match, bar.matchLabel,
     }
-    frame.SoloBarControls = { bar.icon, bar.width, bar.height, bar.text, bar.match }
+    frame.SoloBarControls = {
+        bar.icon, bar.iconValue, bar.width, bar.widthValue,
+        bar.height, bar.heightValue, bar.text, bar.textValue, bar.match,
+    }
 
     local showSwipe, showSwipeLabel = Widgets.CreateCheckbox(editor, "Timer wheel", 105)
     showSwipe:SetPoint("TOPLEFT", crop, "BOTTOMLEFT", 0, -3)
@@ -162,82 +159,95 @@ function Display:Build(editor, frame)
     end)
     frame.SoloShowStacks, frame.SoloShowStacksLabel = showStacks, showStacksLabel
 
-    local opacity = CreateSlider(editor, 0, 100, 150)
-    opacity:SetPoint("TOPLEFT", desaturate, "BOTTOMLEFT", 4, -17)
-    opacity:SetValueStep(5)
-    opacity:SetScript("OnValueChanged", function(_, value) GUI:OnSoloOpacityChanged(value) end)
-    frame.SoloOpacity = opacity
     local opacityLabel = editor:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    opacityLabel:SetPoint("LEFT", opacity, "RIGHT", 28, 0)
+    opacityLabel:SetPoint("TOPLEFT", desaturate, "BOTTOMLEFT", 4, -17)
     opacityLabel:SetText("Icon opacity")
     opacityLabel:SetTextColor(1, 1, 1)
     frame.SoloOpacityLabel = opacityLabel
-    local opacityValue = editor:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    opacityValue:SetPoint("LEFT", opacityLabel, "RIGHT", 9, 0)
-    opacityValue:SetText("100%")
-    opacityValue:SetTextColor(0.42, 0.80, 1)
+    local opacity = CreateSlider(editor, 0, 100, 145)
+    opacity:SetPoint("TOPLEFT", opacityLabel, "BOTTOMLEFT", 7, -7)
+    opacity:SetValueStep(5)
+    opacity:SetScript("OnValueChanged", function(_, value) GUI:OnSoloOpacityChanged(value) end)
+    frame.SoloOpacity = opacity
+    local opacityValue = Widgets.AttachSliderInput(editor, opacity, { suffix = "%" })
     frame.SoloOpacityValue = opacityValue
 
-    local function CreateTextSize(labelText, settingKey, defaultText, anchor, x)
+    local function CreateTextSize(labelText, settingKey, anchor, x)
         local label = editor:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-        label:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", x, -17)
+        label:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", x, -28)
         label:SetText(labelText)
         local slider = CreateSlider(editor, 8, 32)
         slider:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 7, -7)
-        local value = editor:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-        value:SetPoint("LEFT", slider, "RIGHT", 8, 0)
-        value:SetText(defaultText)
+        local value
         slider:SetScript("OnValueChanged", function(_, sliderValue)
             GUI:OnSoloTextSizeChanged(settingKey, sliderValue, value, labelText:gsub(" size$", ""))
         end)
+        value = Widgets.AttachSliderInput(editor, slider, { suffix = " px", width = 46 })
         return label, slider, value
     end
 
     local stackSizeLabel, stackSize, stackSizeValue =
-        CreateTextSize("Stack text size", "soloStackFontSize", "14 px", opacity, -4)
+        CreateTextSize("Stack text size", "soloStackFontSize", opacity, -4)
     frame.SoloStackSizeLabel, frame.SoloStackSize, frame.SoloStackSizeValue = stackSizeLabel, stackSize, stackSizeValue
     local cooldownSizeLabel = editor:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
     cooldownSizeLabel:SetPoint("TOPLEFT", stackSizeLabel, "TOPLEFT", 175, 0)
     cooldownSizeLabel:SetText("Cooldown text size")
     local cooldownSize = CreateSlider(editor, 8, 32)
     cooldownSize:SetPoint("TOPLEFT", cooldownSizeLabel, "BOTTOMLEFT", 7, -7)
-    local cooldownSizeValue = editor:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    cooldownSizeValue:SetPoint("LEFT", cooldownSize, "RIGHT", 8, 0)
-    cooldownSizeValue:SetText("16 px")
+    local cooldownSizeValue
     cooldownSize:SetScript("OnValueChanged", function(_, value)
         GUI:OnSoloTextSizeChanged("soloCooldownFontSize", value, cooldownSizeValue, "Cooldown text")
     end)
+    cooldownSizeValue = Widgets.AttachSliderInput(editor, cooldownSize, { suffix = " px", width = 46 })
     frame.SoloCooldownSizeLabel, frame.SoloCooldownSize, frame.SoloCooldownSizeValue =
         cooldownSizeLabel, cooldownSize, cooldownSizeValue
 
-    local function WirePosition(positionKey, xBox, yBox, label)
-        xBox:SetScript("OnEscapePressed", xBox.ClearFocus)
-        yBox:SetScript("OnEscapePressed", yBox.ClearFocus)
-        xBox:SetScript("OnEnterPressed", xBox.ClearFocus)
-        yBox:SetScript("OnEnterPressed", yBox.ClearFocus)
-        xBox:SetScript("OnEditFocusLost", function()
-            GUI:CommitSoloTextPosition(positionKey, xBox, yBox, label)
-        end)
-        yBox:SetScript("OnEditFocusLost", function()
-            GUI:CommitSoloTextPosition(positionKey, xBox, yBox, label)
-        end)
+    local function WirePositionSliders(positionKey, xSlider, xInput, ySlider, yInput, label)
+        local syncing
+        local sliderMin, sliderMax = Widgets.TEXT_POSITION_SLIDER_MIN, Widgets.TEXT_POSITION_SLIDER_MAX
+        local function CommitSlider(slider, input)
+            if GUI.refreshing or syncing then return end
+            syncing = true
+            input:SetText(tostring(math.floor((slider:GetValue() or 0) + 0.5)))
+            syncing = nil
+            GUI:CommitSoloTextPosition(positionKey, xInput, yInput, label)
+        end
+        local function CommitInput()
+            if GUI.refreshing or syncing then return end
+            GUI:CommitSoloTextPosition(positionKey, xInput, yInput, label)
+            local x, y = tonumber(xInput:GetText()), tonumber(yInput:GetText())
+            if not x or not y then return end
+            syncing = true
+            xSlider:SetValue(Clamp(x, sliderMin, sliderMax))
+            ySlider:SetValue(Clamp(y, sliderMin, sliderMax))
+            syncing = nil
+        end
+        xSlider:SetScript("OnValueChanged", function() CommitSlider(xSlider, xInput) end)
+        ySlider:SetScript("OnValueChanged", function() CommitSlider(ySlider, yInput) end)
+        for _, input in ipairs({ xInput, yInput }) do
+            input:SetScript("OnEscapePressed", input.ClearFocus)
+            input:SetScript("OnEnterPressed", input.ClearFocus)
+            input:SetScript("OnEditFocusLost", CommitInput)
+        end
     end
 
-    local stackPositionLabel, stackXLabel, stackX, stackYLabel, stackY =
-        Widgets.CreatePositionInputs(editor, "Stack position")
-    stackPositionLabel:SetPoint("TOPLEFT", stackSize, "BOTTOMLEFT", -7, -17)
+    local stackPositionLabel, stackXLabel, stackX, stackXValue, stackYLabel, stackY, stackYValue =
+        Widgets.CreatePositionSliders(editor, "Stack text position")
+    stackPositionLabel:SetPoint("TOPLEFT", stackSize, "BOTTOMLEFT", -7, -28)
     frame.SoloStackPositionLabel, frame.SoloStackXLabel = stackPositionLabel, stackXLabel
-    frame.SoloStackX, frame.SoloStackYLabel, frame.SoloStackY = stackX, stackYLabel, stackY
-    local cooldownPositionLabel, cooldownXLabel, cooldownX, cooldownYLabel, cooldownY =
-        Widgets.CreatePositionInputs(editor, "Cooldown position")
-    cooldownPositionLabel:SetPoint("TOPLEFT", stackPositionLabel, "BOTTOMLEFT", 0, -13)
+    frame.SoloStackX, frame.SoloStackXValue, frame.SoloStackYLabel, frame.SoloStackY, frame.SoloStackYValue =
+        stackX, stackXValue, stackYLabel, stackY, stackYValue
+    local cooldownPositionLabel, cooldownXLabel, cooldownX, cooldownXValue, cooldownYLabel, cooldownY, cooldownYValue =
+        Widgets.CreatePositionSliders(editor, "Cooldown text position")
+    cooldownPositionLabel:SetPoint("TOPLEFT", stackPositionLabel, "TOPLEFT", 175, 0)
     frame.SoloCooldownPositionLabel, frame.SoloCooldownXLabel = cooldownPositionLabel, cooldownXLabel
-    frame.SoloCooldownX, frame.SoloCooldownYLabel, frame.SoloCooldownY = cooldownX, cooldownYLabel, cooldownY
-    WirePosition("soloStackPosition", stackX, stackY, "Stack text")
-    WirePosition("soloCooldownPosition", cooldownX, cooldownY, "Cooldown text")
+    frame.SoloCooldownX, frame.SoloCooldownXValue, frame.SoloCooldownYLabel, frame.SoloCooldownY, frame.SoloCooldownYValue =
+        cooldownX, cooldownXValue, cooldownYLabel, cooldownY, cooldownYValue
+    WirePositionSliders("soloStackPosition", stackX, stackXValue, stackY, stackYValue, "Stack text")
+    WirePositionSliders("soloCooldownPosition", cooldownX, cooldownXValue, cooldownY, cooldownYValue, "Cooldown text")
 
     local hotkeyLabel = editor:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-    hotkeyLabel:SetPoint("TOPLEFT", cooldownPositionLabel, "BOTTOMLEFT", 0, -17)
+    hotkeyLabel:SetPoint("TOPLEFT", stackYLabel, "BOTTOMLEFT", 0, -24)
     hotkeyLabel:SetText("Hotkey text")
     frame.SoloHotkeyLabel = hotkeyLabel
     local hotkey = CreateFrame("EditBox", nil, editor, "InputBoxTemplate")
@@ -256,19 +266,19 @@ function Display:Build(editor, frame)
     local hotkeySize = CreateSlider(editor, 8, 32)
     hotkeySize:SetPoint("TOPLEFT", hotkeySizeLabel, "BOTTOMLEFT", 7, -7)
     frame.SoloHotkeySize = hotkeySize
-    local hotkeySizeValue = editor:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    hotkeySizeValue:SetPoint("LEFT", hotkeySize, "RIGHT", 8, 0)
-    hotkeySizeValue:SetText("14 px")
-    frame.SoloHotkeySizeValue = hotkeySizeValue
+    local hotkeySizeValue
     hotkeySize:SetScript("OnValueChanged", function(_, value)
         GUI:OnSoloTextSizeChanged("soloHotkeyFontSize", value, hotkeySizeValue, "Hotkey text")
     end)
-    local hotkeyPositionLabel, hotkeyXLabel, hotkeyX, hotkeyYLabel, hotkeyY =
-        Widgets.CreatePositionInputs(editor, "Hotkey position")
-    hotkeyPositionLabel:SetPoint("TOPLEFT", hotkey, "BOTTOMLEFT", -4, -13)
+    hotkeySizeValue = Widgets.AttachSliderInput(editor, hotkeySize, { suffix = " px", width = 46 })
+    frame.SoloHotkeySizeValue = hotkeySizeValue
+    local hotkeyPositionLabel, hotkeyXLabel, hotkeyX, hotkeyXValue, hotkeyYLabel, hotkeyY, hotkeyYValue =
+        Widgets.CreatePositionSliders(editor, "Hotkey position")
+    hotkeyPositionLabel:SetPoint("TOPLEFT", hotkey, "BOTTOMLEFT", -4, -18)
     frame.SoloHotkeyPositionLabel, frame.SoloHotkeyXLabel = hotkeyPositionLabel, hotkeyXLabel
-    frame.SoloHotkeyX, frame.SoloHotkeyYLabel, frame.SoloHotkeyY = hotkeyX, hotkeyYLabel, hotkeyY
-    WirePosition("soloHotkeyPosition", hotkeyX, hotkeyY, "Hotkey text")
+    frame.SoloHotkeyX, frame.SoloHotkeyXValue = hotkeyX, hotkeyXValue
+    frame.SoloHotkeyYLabel, frame.SoloHotkeyY, frame.SoloHotkeyYValue = hotkeyYLabel, hotkeyY, hotkeyYValue
+    WirePositionSliders("soloHotkeyPosition", hotkeyX, hotkeyXValue, hotkeyY, hotkeyYValue, "Hotkey text")
 
     local toggle = Widgets.CreateSectionToggle(editor, title, line, "display")
     controls.title, controls.line, controls.toggle = title, line, toggle
@@ -290,18 +300,21 @@ function Display:Build(editor, frame)
     controls.stackSizeLabel, controls.stackSize, controls.stackSizeValue = stackSizeLabel, stackSize, stackSizeValue
     controls.cooldownSizeLabel, controls.cooldownSize, controls.cooldownSizeValue =
         cooldownSizeLabel, cooldownSize, cooldownSizeValue
-    controls.stackPositionLabel, controls.stackXLabel, controls.stackX = stackPositionLabel, stackXLabel, stackX
-    controls.stackYLabel, controls.stackY = stackYLabel, stackY
+    controls.stackPositionLabel, controls.stackXLabel, controls.stackX, controls.stackXValue =
+        stackPositionLabel, stackXLabel, stackX, stackXValue
+    controls.stackYLabel, controls.stackY, controls.stackYValue = stackYLabel, stackY, stackYValue
     controls.cooldownPositionLabel, controls.cooldownXLabel, controls.cooldownX =
         cooldownPositionLabel, cooldownXLabel, cooldownX
-    controls.cooldownYLabel, controls.cooldownY = cooldownYLabel, cooldownY
+    controls.cooldownXValue, controls.cooldownYLabel, controls.cooldownY, controls.cooldownYValue =
+        cooldownXValue, cooldownYLabel, cooldownY, cooldownYValue
     controls.hotkeyLabel, controls.hotkey, controls.hotkeySizeLabel = hotkeyLabel, hotkey, hotkeySizeLabel
     controls.hotkeySize, controls.hotkeySizeValue = hotkeySize, hotkeySizeValue
-    controls.hotkeyPositionLabel, controls.hotkeyXLabel, controls.hotkeyX = hotkeyPositionLabel, hotkeyXLabel, hotkeyX
-    controls.hotkeyYLabel, controls.hotkeyY = hotkeyYLabel, hotkeyY
+    controls.hotkeyPositionLabel, controls.hotkeyXLabel, controls.hotkeyX, controls.hotkeyXValue =
+        hotkeyPositionLabel, hotkeyXLabel, hotkeyX, hotkeyXValue
+    controls.hotkeyYLabel, controls.hotkeyY, controls.hotkeyYValue = hotkeyYLabel, hotkeyY, hotkeyYValue
     controls.descriptor = {
-        key = "display", title = title, toggle = toggle, bottom = hotkeyPositionLabel,
-        gap = -17, collapseHeight = 442,
+        key = "display", title = title, toggle = toggle, bottom = hotkeyYLabel,
+        gap = -17, collapseHeight = 560,
         elements = {
             panel, solo, soloLabel, onTop, onTopLabel, size, sizeLabel, sizeValue,
             crop, cropLabel, cropAmount, cropValue,
@@ -312,10 +325,11 @@ function Display:Build(editor, frame)
             alwaysShow, alwaysShowLabel, desaturate, desaturateLabel, showStacks, showStacksLabel,
             opacity, opacityLabel, opacityValue, stackSizeLabel, stackSize, stackSizeValue,
             cooldownSizeLabel, cooldownSize, cooldownSizeValue,
-            stackPositionLabel, stackXLabel, stackX, stackYLabel, stackY,
-            cooldownPositionLabel, cooldownXLabel, cooldownX, cooldownYLabel, cooldownY,
+            stackPositionLabel, stackXLabel, stackX, stackXValue, stackYLabel, stackY, stackYValue,
+            cooldownPositionLabel, cooldownXLabel, cooldownX, cooldownXValue, cooldownYLabel, cooldownY, cooldownYValue,
             hotkeyLabel, hotkey, hotkeySizeLabel, hotkeySize, hotkeySizeValue,
-            hotkeyPositionLabel, hotkeyXLabel, hotkeyX, hotkeyYLabel, hotkeyY,
+            hotkeyPositionLabel, hotkeyXLabel, hotkeyX, hotkeyXValue,
+            hotkeyYLabel, hotkeyY, hotkeyYValue,
         },
     }
     return controls

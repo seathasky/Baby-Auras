@@ -158,14 +158,26 @@ function GUI:RefreshEditor(message)
     frame.SoloHotkeySize:SetValue(entrySettings and entrySettings.soloHotkeyFontSize or Defaults.soloAppearance.hotkeyFontSize)
     frame.SoloHotkey:SetText(entrySettings and entrySettings.soloHotkey or Defaults.soloAppearance.hotkey)
     local stackX, stackY = addon.Solo:GetTextPosition(entry, "soloStackPosition")
-    frame.SoloStackX:SetText(tostring(math.floor(stackX + 0.5)))
-    frame.SoloStackY:SetText(tostring(math.floor(stackY + 0.5)))
+    frame.SoloStackXValue:SetText(tostring(math.floor(stackX + 0.5)))
+    frame.SoloStackYValue:SetText(tostring(math.floor(stackY + 0.5)))
+    frame.SoloStackX:SetValue(Clamp(stackX, addon.GUIWidgets.TEXT_POSITION_SLIDER_MIN,
+        addon.GUIWidgets.TEXT_POSITION_SLIDER_MAX))
+    frame.SoloStackY:SetValue(Clamp(stackY, addon.GUIWidgets.TEXT_POSITION_SLIDER_MIN,
+        addon.GUIWidgets.TEXT_POSITION_SLIDER_MAX))
     local cooldownX, cooldownY = addon.Solo:GetTextPosition(entry, "soloCooldownPosition")
-    frame.SoloCooldownX:SetText(tostring(math.floor(cooldownX + 0.5)))
-    frame.SoloCooldownY:SetText(tostring(math.floor(cooldownY + 0.5)))
+    frame.SoloCooldownXValue:SetText(tostring(math.floor(cooldownX + 0.5)))
+    frame.SoloCooldownYValue:SetText(tostring(math.floor(cooldownY + 0.5)))
+    frame.SoloCooldownX:SetValue(Clamp(cooldownX, addon.GUIWidgets.TEXT_POSITION_SLIDER_MIN,
+        addon.GUIWidgets.TEXT_POSITION_SLIDER_MAX))
+    frame.SoloCooldownY:SetValue(Clamp(cooldownY, addon.GUIWidgets.TEXT_POSITION_SLIDER_MIN,
+        addon.GUIWidgets.TEXT_POSITION_SLIDER_MAX))
     local hotkeyX, hotkeyY = addon.Solo:GetTextPosition(entry, "soloHotkeyPosition")
-    frame.SoloHotkeyX:SetText(tostring(math.floor(hotkeyX + 0.5)))
-    frame.SoloHotkeyY:SetText(tostring(math.floor(hotkeyY + 0.5)))
+    frame.SoloHotkeyXValue:SetText(tostring(math.floor(hotkeyX + 0.5)))
+    frame.SoloHotkeyYValue:SetText(tostring(math.floor(hotkeyY + 0.5)))
+    frame.SoloHotkeyX:SetValue(Clamp(hotkeyX, addon.GUIWidgets.TEXT_POSITION_SLIDER_MIN,
+        addon.GUIWidgets.TEXT_POSITION_SLIDER_MAX))
+    frame.SoloHotkeyY:SetValue(Clamp(hotkeyY, addon.GUIWidgets.TEXT_POSITION_SLIDER_MIN,
+        addon.GUIWidgets.TEXT_POSITION_SLIDER_MAX))
     frame.SoloShowSwipe:SetChecked(not entrySettings or entrySettings.soloShowSwipe ~= false)
     frame.SoloShowNumbers:SetChecked(not entrySettings or entrySettings.soloShowNumbers ~= false)
     frame.SoloShowStacks:SetChecked(not entrySettings or entrySettings.soloShowStacks ~= false)

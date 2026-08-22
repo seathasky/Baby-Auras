@@ -68,6 +68,113 @@ function Widgets.CreatePositionInputs(parent, labelText)
     return label, xLabel, xBox, yLabel, yBox
 end
 
+Widgets.TEXT_POSITION_SLIDER_MIN = -50
+Widgets.TEXT_POSITION_SLIDER_MAX = 50
+
+function Widgets.CreatePositionSliders(parent, labelText)
+    local label = parent:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+    label:SetText(labelText)
+    label:SetWidth(155)
+    label:SetJustifyH("LEFT")
+
+    local function CreateAxis(axis, anchor, yOffset)
+        local axisLabel = parent:CreateFontString(nil, "ARTWORK", "GameFontDisableSmall")
+        axisLabel:SetPoint("TOPLEFT", anchor, "BOTTOMLEFT", 0, yOffset)
+        axisLabel:SetWidth(10)
+        axisLabel:SetJustifyH("LEFT")
+        axisLabel:SetText(axis)
+        local slider = CreateFrame("Slider", nil, parent, "OptionsSliderTemplate")
+        slider:SetPoint("LEFT", axisLabel, "RIGHT", 3, 0)
+        slider:SetSize(92, 16)
+        slider:SetMinMaxValues(Widgets.TEXT_POSITION_SLIDER_MIN, Widgets.TEXT_POSITION_SLIDER_MAX)
+        slider:SetValueStep(1)
+        slider:SetObeyStepOnDrag(true)
+        slider.Low:SetText("")
+        slider.High:SetText("")
+        slider.Text:SetText("")
+        local input = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+        input:SetPoint("LEFT", slider, "RIGHT", 10, 0)
+        input:SetSize(42, 22)
+        input:SetAutoFocus(false)
+        input:SetMaxLetters(4)
+        input:SetJustifyH("CENTER")
+        input:SetText("0")
+        input:SetScript("OnEditFocusGained", input.HighlightText)
+        return axisLabel, slider, input
+    end
+
+    local xLabel, xSlider, xInput = CreateAxis("X", label, -8)
+    local yLabel, ySlider, yInput = CreateAxis("Y", xLabel, -12)
+    return label, xLabel, xSlider, xInput, yLabel, ySlider, yInput
+end
+
+function Widgets.AttachSliderInput(parent, slider, options)
+    options = options or {}
+    -- The stock slider's endpoint labels compete with an adjacent value box.
+    -- The editable value is clearer on its own and still clamps to the same
+    -- min/max range when committed.
+    if slider.Low then slider.Low:SetText("") end
+    if slider.High then slider.High:SetText("") end
+    local input = CreateFrame("EditBox", nil, parent, "InputBoxTemplate")
+    input:SetPoint("LEFT", slider, "RIGHT", options.offset or 10, 0)
+    input:SetSize(options.width or 48, 22)
+    input:SetAutoFocus(false)
+    input:SetMaxLetters(options.maxLetters or 10)
+    input:SetJustifyH("CENTER")
+    input:SetScript("OnEditFocusGained", input.HighlightText)
+
+    local prefix, suffix = options.prefix or "", options.suffix or ""
+    local function FormatValue(value)
+        value = tonumber(value) or 0
+        local decimals = options.decimals or 0
+        local text = decimals > 0 and string.format("%." .. decimals .. "f", value)
+            or tostring(math.floor(value + 0.5))
+        return prefix .. text .. suffix
+    end
+
+    local function RefreshInput(value)
+        input:SetText(FormatValue(value))
+    end
+
+    slider:HookScript("OnValueChanged", function(_, value)
+        RefreshInput(value)
+    end)
+
+    local function CommitInput()
+        if addon.GUI and addon.GUI.refreshing then
+            RefreshInput(slider:GetValue())
+            return
+        end
+        local raw = input:GetText() or ""
+        local value = tonumber(raw:match("[-+]?%d*%.?%d+"))
+        if not value then
+            RefreshInput(slider:GetValue())
+            return
+        end
+        local minValue, maxValue = slider:GetMinMaxValues()
+        value = Clamp(value, minValue, maxValue)
+        local step = tonumber(slider:GetValueStep()) or 1
+        if step > 0 then
+            value = minValue + (math.floor(((value - minValue) / step) + 0.5) * step)
+            value = Clamp(value, minValue, maxValue)
+        end
+        slider:SetValue(value)
+        local actual = slider:GetValue()
+        RefreshInput(actual)
+        if options.onCommit then options.onCommit(actual) end
+    end
+
+    input:SetScript("OnEnterPressed", input.ClearFocus)
+    input:SetScript("OnEscapePressed", function(self)
+        RefreshInput(slider:GetValue())
+        self:ClearFocus()
+    end)
+    input:SetScript("OnEditFocusLost", CommitInput)
+    RefreshInput(slider:GetValue())
+    slider.ManualInput = input
+    return input
+end
+
 function Widgets.CreateColorButton(parent, labelText)
     local button = CreateFrame("Button", nil, parent, "BackdropTemplate")
     button:SetSize(105, 28)
@@ -104,11 +211,11 @@ function Widgets.CreateGlowSlider(parent, labelText, minValue, maxValue, setting
     slider.Low:SetText(tostring(minValue))
     slider.High:SetText(tostring(maxValue))
     slider.Text:SetText("")
-    local valueText = parent:CreateFontString(nil, "ARTWORK", "GameFontHighlightSmall")
-    valueText:SetPoint("LEFT", slider, "RIGHT", 8, 0)
+    local valueText
     slider:SetScript("OnValueChanged", function(_, value)
         addon.GUI:OnGlowTuningChanged(settingKey, value, valueText, suffix)
     end)
+    valueText = Widgets.AttachSliderInput(parent, slider, { suffix = suffix or "", width = 46 })
     return label, slider, valueText
 end
 
@@ -130,7 +237,7 @@ end
 function Widgets.CreateSectionToggle(parent, title, line, sectionKey)
     local button = CreateFrame("Button", nil, parent, "BackdropTemplate")
     button:SetSize(30, 26)
-    button:SetPoint("CENTER", title, "LEFT", 305, 8)
+    button:SetPoint("CENTER", title, "LEFT", 365, 8)
     button:SetBackdrop({
         bgFile = "Interface\\Buttons\\WHITE8X8",
         edgeFile = "Interface\\Buttons\\WHITE8X8",

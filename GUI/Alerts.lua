@@ -51,8 +51,8 @@ function GUI:RefreshGlowTuningControls(settings)
     local wasRefreshing = self.refreshing
     self.refreshing = true
     self.frame.GlowCount:SetMinMaxValues(extended and 1 or 2, extended and 8 or 64)
-    self.frame.GlowCount.Low:SetText(extended and "1" or "2")
-    self.frame.GlowCount.High:SetText(extended and "8" or "64")
+    self.frame.GlowCount.Low:SetText("")
+    self.frame.GlowCount.High:SetText("")
     self.frame.GlowCountLabel:SetText(extended and "Glow layers" or "Pixel count")
     self.frame.GlowCount:SetValue(settings and settings.glowCount or (extended and 3 or 8))
     self.frame.GlowSpeed:SetValue(settings and settings.glowSpeed or Defaults.trigger.glowSpeed)

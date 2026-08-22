@@ -16,7 +16,7 @@ function Trigger:Build(editor, frame)
 
     local button = CreateFrame("Button", nil, editor, "UIPanelButtonTemplate")
     button:SetPoint("TOPLEFT", label, "BOTTOMLEFT", 0, -6)
-    button:SetSize(335, 26)
+    button:SetSize(395, 26)
     button:SetScript("OnClick", function() GUI:CycleTrigger() end)
     frame.Trigger = button
 
@@ -29,7 +29,7 @@ function Trigger:Build(editor, frame)
     for index = 1, #addon.TriggerOrder do
         local eventButton = CreateFrame("Button", nil, editor, "UIPanelButtonTemplate")
         eventButton:SetPoint("TOPLEFT", button)
-        eventButton:SetSize(335, 26)
+        eventButton:SetSize(395, 26)
         eventButton:SetScript("OnClick", function(self) GUI:SelectTrigger(self.trigger) end)
         eventButton:Hide()
         eventButtons[index] = eventButton

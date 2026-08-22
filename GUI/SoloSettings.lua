@@ -273,6 +273,7 @@ function GUI:UpdateSoloControls()
     local soloSelected = self.frame.Solo:IsShown() and self.frame.Solo:GetChecked() == true
     local available = soloSelected and self.frame.Enabled:GetChecked() == true
     self.frame.SoloSize:SetEnabled(available)
+    self.frame.SoloSizeValue:SetEnabled(available)
     self.frame.SoloSize:SetAlpha(available and 1 or 0.32)
     self.frame.SoloSizeLabel:SetAlpha(available and 1 or 0.32)
     self.frame.SoloSizeValue:SetAlpha(available and 1 or 0.32)
@@ -284,17 +285,20 @@ function GUI:UpdateSoloControls()
     self.frame.SoloCrop:SetAlpha(cropAvailable and 1 or 0.32)
     self.frame.SoloCropLabel:SetAlpha(cropAvailable and 1 or 0.32)
     self.frame.SoloCropAmount:SetEnabled(cropAmountEnabled)
+    self.frame.SoloCropValue:SetEnabled(cropAmountEnabled)
     self.frame.SoloCropAmount:SetAlpha(cropAmountEnabled and 1 or 0.32)
     self.frame.SoloCropValue:SetAlpha(cropAmountEnabled and 1 or 0.32)
     for _, control in ipairs(self.frame.SoloBarControls or {}) do control:SetEnabled(available) end
     local independentBarIcon = available and self.frame.ActiveTrackedBar == true
         and self.frame.SoloBarMatchIcon:GetChecked() ~= true
     self.frame.SoloBarIconSize:SetEnabled(independentBarIcon)
+    self.frame.SoloBarIconSizeValue:SetEnabled(independentBarIcon)
     self.frame.SoloBarIconSize:SetAlpha(independentBarIcon and 1 or 0.32)
     self.frame.SoloBarIconSizeLabel:SetAlpha(independentBarIcon and 1 or 0.32)
     self.frame.SoloBarIconSizeValue:SetAlpha(independentBarIcon and 1 or 0.32)
     local stackTextEnabled = available and self.frame.SoloShowStacks:GetChecked() == true
     self.frame.SoloStackSize:SetEnabled(stackTextEnabled)
+    self.frame.SoloStackSizeValue:SetEnabled(stackTextEnabled)
     self.frame.SoloStackSize:SetAlpha(stackTextEnabled and 1 or 0.32)
     self.frame.SoloStackSizeLabel:SetAlpha(stackTextEnabled and 1 or 0.32)
     self.frame.SoloStackSizeValue:SetAlpha(stackTextEnabled and 1 or 0.32)
@@ -302,6 +306,7 @@ function GUI:UpdateSoloControls()
     for _, element in ipairs(self.frame.SoloStackPositionElements or {}) do element:SetAlpha(stackTextEnabled and 1 or 0.32) end
     local cooldownTextEnabled = available and self.frame.SoloShowNumbers:GetChecked() == true
     self.frame.SoloCooldownSize:SetEnabled(cooldownTextEnabled)
+    self.frame.SoloCooldownSizeValue:SetEnabled(cooldownTextEnabled)
     self.frame.SoloCooldownSize:SetAlpha(cooldownTextEnabled and 1 or 0.32)
     self.frame.SoloCooldownSizeLabel:SetAlpha(cooldownTextEnabled and 1 or 0.32)
     self.frame.SoloCooldownSizeValue:SetAlpha(cooldownTextEnabled and 1 or 0.32)
@@ -319,6 +324,7 @@ function GUI:UpdateSoloControls()
     if self.frame.SoloBarTextColor then self.frame.SoloBarTextColor:SetShown(showBarTheme) end
     local borderSizeEnabled = available and self.frame.SoloBlackBorder:GetChecked() == true
     self.frame.SoloBorderSize:SetEnabled(borderSizeEnabled)
+    self.frame.SoloBorderSizeValue:SetEnabled(borderSizeEnabled)
     self.frame.SoloBorderSize:SetAlpha(borderSizeEnabled and 1 or 0.32)
     self.frame.SoloBorderSizeValue:SetAlpha(borderSizeEnabled and 1 or 0.32)
     if self.frame.SoloBarFillColor then
